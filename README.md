@@ -27,6 +27,7 @@ docker compose up --build
 
 The database schema is created automatically on first startup — no manual
 provisioning or seed scripts. The API listens on `http://localhost:8000`.
+then open: http://localhost:8000/docs
 
 To run the smoke test locally:
 
