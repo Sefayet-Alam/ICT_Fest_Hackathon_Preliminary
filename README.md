@@ -5,6 +5,14 @@ multiple tenant organizations. Each organization has its own rooms, staff
 (admins), and members. Members book rooms for time slots; admins manage rooms and
 pull reports.
 
+## Team Info
+
+- Team_name: UNKNOWNS
+- Members: Khandoker Sefayet Alam (Team Lead), Nazib Abrar, Md Raihanul Haque Rahi
+- Email: sefayetalam14@gmail.com
+- Contact: 01919030974
+- University: RUET
+
 ## Stack
 
 - Python 3.11, FastAPI, SQLAlchemy, SQLite (single file, no external DB service)
