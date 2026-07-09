@@ -1,61 +1,2640 @@
 {
   "suite": "cowork-booking-api",
+  "version": "2-master",
   "base_url": "http://localhost:8000",
-  "notes": "Black-box cases derived from README business rules. IDs mirror TESTCASES.md. status: untested|pass|fail.",
+  "source_of_truth": "Problem statement business rules (1-16) + API contract; mirrors README.",
+  "notes": "Master black-box suite. Every case tagged with rule (1-16) and endpoint. status: untested|pass|fail. Placeholders like $ADMIN,$ROOM,$BID,$OTHER_ORG_ROOM,<t>,<now+2h> are filled by the runner. bug field links to BUG_LEDGER.md.",
+  "legend": {
+    "method": "HTTP verb, or SEQUENCE/COMPARE/DECODE/CONCURRENT for multi-step or non-HTTP checks",
+    "critical": "true = high-value case likely to expose a planted bug or a security/contract violation"
+  },
+  "coverage": {
+    "total_cases": 94,
+    "rules_1_16": {
+      "1": [
+        "T-TZ-OFFSET",
+        "T-TZ-NAIVE",
+        "T-TZ-RESPONSE-DESIGNATOR"
+      ],
+      "2": [
+        "T-ROOM-CREATE",
+        "T-PRICE",
+        "T-WIN-MIN",
+        "T-WIN-MAX",
+        "T-WIN-9H",
+        "T-WIN-HALF",
+        "T-WIN-ZERO",
+        "T-WIN-NEG",
+        "T-WIN-PAST",
+        "T-WIN-FUTURE-OK",
+        "T-BOOK-422"
+      ],
+      "3": [
+        "T-CONF-OVERLAP",
+        "T-CONF-BACK2BACK",
+        "T-CONF-CANCELLED-IGNORED",
+        "T-CONF-CONC"
+      ],
+      "4": [
+        "T-QUOTA",
+        "T-QUOTA-OUTSIDE",
+        "T-QUOTA-CANCELLED",
+        "T-QUOTA-CONC"
+      ],
+      "5": [
+        "T-RATE",
+        "T-RATE-CONC"
+      ],
+      "6": [
+        "T-DETAIL-REFUNDS",
+        "T-REFUND-100",
+        "T-REFUND-48",
+        "T-REFUND-50",
+        "T-REFUND-24",
+        "T-REFUND-0",
+        "T-REFUND-ROUND",
+        "T-REFUND-CONSISTENT",
+        "T-CANCEL-ONE-REFUNDLOG",
+        "T-CANCEL-DUP",
+        "T-CANCEL-ADMIN",
+        "T-CANCEL-CONC",
+        "T-EXPORT-HEADER"
+      ],
+      "7": [
+        "T-REF-UNIQUE",
+        "T-REF-FORMAT"
+      ],
+      "8": [
+        "T-LOGIN-OK",
+        "T-LOGIN-BAD",
+        "T-LOGIN-UNKNOWN-ORG",
+        "T-AUTH-REFRESH-ROTATE",
+        "T-AUTH-REFRESH-REUSE",
+        "T-AUTH-REFRESH-WRONGTYPE",
+        "T-AUTH-LOGOUT",
+        "T-LOGOUT-NOAUTH",
+        "T-JWT-EXP",
+        "T-JWT-REFRESH-EXP",
+        "T-JWT-CLAIMS",
+        "T-AUTH-MISSING",
+        "T-AUTH-BADTOKEN",
+        "T-AUTH-EXPIRED",
+        "T-AUTH-REFRESH-AS-ACCESS"
+      ],
+      "9": [
+        "T-ROOMS-LIST",
+        "T-ROOM-CREATE-FORBIDDEN",
+        "T-ROOMS-LIST-TENANT",
+        "T-TENANT-ROOM",
+        "T-TENANT-STATS",
+        "T-BOOK-ROOM-NOTFOUND",
+        "T-TENANT-BOOKING",
+        "T-TENANT-REPORT",
+        "T-EXPORT-CROSSORG",
+        "T-EXPORT-ADMIN-ONLY"
+      ],
+      "10": [
+        "T-VIS-LIST-OWN",
+        "T-DETAIL-STARTTIME",
+        "T-VIS-IDOR-GET",
+        "T-VIS-ADMIN-GET",
+        "T-CANCEL-AUTH"
+      ],
+      "11": [
+        "T-LIST-ORDER",
+        "T-LIST-TIES",
+        "T-LIST-PAGE1",
+        "T-LIST-PAGE2",
+        "T-LIST-LIMIT",
+        "T-LIST-LIMIT-MAX",
+        "T-LIST-TOTAL"
+      ],
+      "12": [
+        "T-REPORT",
+        "T-REPORT-ZERO-ROOMS",
+        "T-REPORT-EXCL-CANCEL",
+        "T-REPORT-RANGE",
+        "T-REPORT-STALE",
+        "T-REPORT-ADMIN-ONLY"
+      ],
+      "13": [
+        "T-AVAIL",
+        "T-AVAIL-CREATE-IMMEDIATE",
+        "T-AVAIL-STALE",
+        "T-AVAIL-DATE-FILTER"
+      ],
+      "14": [
+        "T-STATS-DERIVED",
+        "T-STATS-CONC"
+      ],
+      "15": [
+        "T-REG-ADMIN",
+        "T-REG-MEMBER",
+        "T-REG-DUP",
+        "T-REG-422"
+      ],
+      "16": [
+        "T-HEALTH",
+        "T-LIVENESS-DEADLOCK"
+      ]
+    },
+    "endpoints": {
+      "POST /auth/register": [
+        "T-REG-ADMIN",
+        "T-REG-MEMBER",
+        "T-REG-DUP",
+        "T-REG-422"
+      ],
+      "POST /auth/login": [
+        "T-LOGIN-OK",
+        "T-LOGIN-BAD",
+        "T-LOGIN-UNKNOWN-ORG",
+        "T-JWT-EXP",
+        "T-JWT-REFRESH-EXP",
+        "T-JWT-CLAIMS"
+      ],
+      "POST /auth/refresh": [
+        "T-AUTH-REFRESH-ROTATE",
+        "T-AUTH-REFRESH-REUSE",
+        "T-AUTH-REFRESH-WRONGTYPE"
+      ],
+      "POST /auth/logout": [
+        "T-AUTH-LOGOUT",
+        "T-LOGOUT-NOAUTH"
+      ],
+      "GET /rooms": [
+        "T-AUTH-MISSING",
+        "T-AUTH-BADTOKEN",
+        "T-AUTH-EXPIRED",
+        "T-AUTH-REFRESH-AS-ACCESS",
+        "T-ROOMS-LIST",
+        "T-ROOMS-LIST-TENANT"
+      ],
+      "POST /rooms": [
+        "T-ROOM-CREATE",
+        "T-ROOM-CREATE-FORBIDDEN"
+      ],
+      "GET /rooms/{id}/availability": [
+        "T-AVAIL",
+        "T-AVAIL-CREATE-IMMEDIATE",
+        "T-AVAIL-STALE",
+        "T-AVAIL-DATE-FILTER",
+        "T-TENANT-ROOM"
+      ],
+      "GET /rooms/{id}/stats": [
+        "T-STATS-DERIVED",
+        "T-STATS-CONC",
+        "T-TENANT-STATS"
+      ],
+      "POST /bookings": [
+        "T-PRICE",
+        "T-WIN-MIN",
+        "T-WIN-MAX",
+        "T-WIN-9H",
+        "T-WIN-HALF",
+        "T-WIN-ZERO",
+        "T-WIN-NEG",
+        "T-WIN-PAST",
+        "T-WIN-FUTURE-OK",
+        "T-TZ-OFFSET",
+        "T-TZ-NAIVE",
+        "T-TZ-RESPONSE-DESIGNATOR",
+        "T-CONF-OVERLAP",
+        "T-CONF-BACK2BACK",
+        "T-CONF-CANCELLED-IGNORED",
+        "T-CONF-CONC",
+        "T-QUOTA",
+        "T-QUOTA-OUTSIDE",
+        "T-QUOTA-CANCELLED",
+        "T-QUOTA-CONC",
+        "T-RATE",
+        "T-RATE-CONC",
+        "T-BOOK-ROOM-NOTFOUND",
+        "T-REF-UNIQUE",
+        "T-REF-FORMAT",
+        "T-BOOK-422",
+        "T-LIVENESS-DEADLOCK"
+      ],
+      "GET /bookings": [
+        "T-LIST-ORDER",
+        "T-LIST-TIES",
+        "T-LIST-PAGE1",
+        "T-LIST-PAGE2",
+        "T-LIST-LIMIT",
+        "T-LIST-LIMIT-MAX",
+        "T-LIST-TOTAL",
+        "T-VIS-LIST-OWN"
+      ],
+      "GET /bookings/{id}": [
+        "T-DETAIL-STARTTIME",
+        "T-DETAIL-REFUNDS",
+        "T-VIS-IDOR-GET",
+        "T-VIS-ADMIN-GET",
+        "T-TENANT-BOOKING"
+      ],
+      "POST /bookings/{id}/cancel": [
+        "T-REFUND-100",
+        "T-REFUND-48",
+        "T-REFUND-50",
+        "T-REFUND-24",
+        "T-REFUND-0",
+        "T-REFUND-ROUND",
+        "T-REFUND-CONSISTENT",
+        "T-CANCEL-ONE-REFUNDLOG",
+        "T-CANCEL-DUP",
+        "T-CANCEL-AUTH",
+        "T-CANCEL-ADMIN",
+        "T-CANCEL-CONC"
+      ],
+      "GET /admin/usage-report": [
+        "T-REPORT",
+        "T-REPORT-ZERO-ROOMS",
+        "T-REPORT-EXCL-CANCEL",
+        "T-REPORT-RANGE",
+        "T-REPORT-STALE",
+        "T-REPORT-ADMIN-ONLY",
+        "T-TENANT-REPORT"
+      ],
+      "GET /admin/export": [
+        "T-EXPORT-HEADER",
+        "T-EXPORT-CROSSORG",
+        "T-EXPORT-ADMIN-ONLY"
+      ],
+      "GET /health": [
+        "T-HEALTH"
+      ]
+    },
+    "rules_missing": [],
+    "endpoints_missing": [],
+    "critical_cases": [
+      "T-REG-DUP",
+      "T-LOGIN-BAD",
+      "T-AUTH-REFRESH-REUSE",
+      "T-AUTH-LOGOUT",
+      "T-JWT-EXP",
+      "T-JWT-CLAIMS",
+      "T-AUTH-MISSING",
+      "T-ROOM-CREATE-FORBIDDEN",
+      "T-ROOMS-LIST-TENANT",
+      "T-AVAIL-STALE",
+      "T-TENANT-ROOM",
+      "T-STATS-DERIVED",
+      "T-STATS-CONC",
+      "T-WIN-ZERO",
+      "T-WIN-NEG",
+      "T-WIN-PAST",
+      "T-TZ-OFFSET",
+      "T-CONF-BACK2BACK",
+      "T-CONF-CONC",
+      "T-QUOTA",
+      "T-QUOTA-CONC",
+      "T-RATE",
+      "T-RATE-CONC",
+      "T-BOOK-ROOM-NOTFOUND",
+      "T-REF-UNIQUE",
+      "T-LIST-ORDER",
+      "T-LIST-PAGE1",
+      "T-LIST-LIMIT",
+      "T-VIS-LIST-OWN",
+      "T-DETAIL-STARTTIME",
+      "T-VIS-IDOR-GET",
+      "T-TENANT-BOOKING",
+      "T-REFUND-48",
+      "T-REFUND-0",
+      "T-REFUND-ROUND",
+      "T-REFUND-CONSISTENT",
+      "T-CANCEL-DUP",
+      "T-CANCEL-AUTH",
+      "T-CANCEL-CONC",
+      "T-REPORT-ZERO-ROOMS",
+      "T-REPORT-STALE",
+      "T-REPORT-ADMIN-ONLY",
+      "T-EXPORT-HEADER",
+      "T-EXPORT-CROSSORG",
+      "T-EXPORT-ADMIN-ONLY",
+      "T-LIVENESS-DEADLOCK"
+    ]
+  },
   "cases": [
-    {"id": "T-HEALTH", "title": "Health check", "category": "smoke", "rule": 16, "setup": "none", "method": "GET", "path": "/health", "headers": {}, "body": null, "expected_status": 200, "expected_response_shape": {"status": "ok"}, "expected_behavior": "Liveness endpoint returns ok", "failure_signal": "non-200 or wrong body", "notes": "", "status": "untested"},
-    {"id": "T-REG-ADMIN", "title": "Register creates org admin", "category": "auth", "rule": 15, "setup": "none", "method": "POST", "path": "/auth/register", "headers": {"Content-Type": "application/json"}, "body": {"org_name": "acme2", "username": "alice", "password": "pw12345"}, "expected_status": 201, "expected_response_shape": {"user_id": "int", "org_id": "int", "username": "str", "role": "admin"}, "expected_behavior": "First user in unknown org becomes admin", "failure_signal": "role != admin", "notes": "", "status": "untested"},
-    {"id": "T-REG-MEMBER", "title": "Join existing org as member", "category": "auth", "rule": 15, "setup": "org acme exists", "method": "POST", "path": "/auth/register", "headers": {"Content-Type": "application/json"}, "body": {"org_name": "acme", "username": "bob2", "password": "pw12345"}, "expected_status": 201, "expected_response_shape": {"role": "member"}, "expected_behavior": "Known org join = member", "failure_signal": "role != member", "notes": "", "status": "untested"},
-    {"id": "T-REG-DUP", "title": "Duplicate username returns 409", "category": "auth", "rule": 15, "bug": "A4", "setup": "user exists", "method": "POST", "path": "/auth/register", "headers": {"Content-Type": "application/json"}, "body": {"org_name": "acme", "username": "bob", "password": "pw12345"}, "expected_status": 409, "expected_response_shape": {"code": "USERNAME_TAKEN"}, "expected_behavior": "Duplicate username in org rejected", "failure_signal": "200 or 500", "notes": "currently returns 200", "status": "untested"},
-    {"id": "T-LOGIN-BAD", "title": "Bad credentials", "category": "auth", "rule": 8, "setup": "user exists", "method": "POST", "path": "/auth/login", "headers": {"Content-Type": "application/json"}, "body": {"org_name": "acme", "username": "bob", "password": "wrong"}, "expected_status": 401, "expected_response_shape": {"code": "INVALID_CREDENTIALS"}, "expected_behavior": "Wrong password rejected", "failure_signal": "other status", "notes": "", "status": "untested"},
-    {"id": "T-JWT-EXP", "title": "Access token lifetime 900s", "category": "auth", "rule": 8, "bug": "A1", "setup": "login", "method": "DECODE", "path": "access_token", "headers": {}, "body": null, "expected_status": null, "expected_response_shape": {"exp_minus_iat": 900}, "expected_behavior": "exp - iat exactly 900 seconds", "failure_signal": "54000 or other", "notes": "decode JWT payload without verifying", "status": "untested"},
-    {"id": "T-AUTH-LOGOUT", "title": "Logout invalidates token", "category": "auth", "rule": 8, "bug": "A2", "setup": "login", "method": "SEQUENCE", "path": "/auth/logout then GET /rooms", "headers": {"Authorization": "Bearer $ACCESS"}, "body": null, "expected_status": 401, "expected_response_shape": {}, "expected_behavior": "Reusing token after logout is 401", "failure_signal": "200 after logout", "notes": "", "status": "untested"},
-    {"id": "T-AUTH-REFRESH-ROTATE", "title": "Refresh returns new pair", "category": "auth", "rule": 8, "setup": "login", "method": "POST", "path": "/auth/refresh", "headers": {"Content-Type": "application/json"}, "body": {"refresh_token": "$REFRESH"}, "expected_status": 200, "expected_response_shape": {"access_token": "str", "refresh_token": "str", "token_type": "bearer"}, "expected_behavior": "Rotates tokens", "failure_signal": "non-200", "notes": "", "status": "untested"},
-    {"id": "T-AUTH-REFRESH-REUSE", "title": "Refresh single-use", "category": "auth", "rule": 8, "bug": "A5", "setup": "refreshed once", "method": "POST", "path": "/auth/refresh", "headers": {"Content-Type": "application/json"}, "body": {"refresh_token": "$OLD_REFRESH"}, "expected_status": 401, "expected_response_shape": {}, "expected_behavior": "Old refresh token rejected after use", "failure_signal": "200 (reusable)", "notes": "", "status": "untested"},
-    {"id": "T-TZ-OFFSET", "title": "Offset input converted to UTC", "category": "time", "rule": 1, "bug": "T1", "setup": "admin, room", "method": "SEQUENCE", "path": "POST /bookings offset then GET availability", "headers": {"Authorization": "Bearer $ADMIN"}, "body": {"room_id": "$ROOM", "start_time": "2026-12-01T12:00:00+06:00", "end_time": "2026-12-01T13:00:00+06:00"}, "expected_status": 201, "expected_response_shape": {"start_time_utc": "2026-12-01T06:00:00+00:00"}, "expected_behavior": "12:00+06:00 stored/echoed as 06:00Z", "failure_signal": "echoes 12:00 (offset dropped)", "notes": "", "status": "untested"},
-    {"id": "T-WIN-PAST", "title": "Past start rejected, no grace", "category": "booking", "rule": 2, "bug": "B2", "setup": "admin, room", "method": "POST", "path": "/bookings", "headers": {"Authorization": "Bearer $ADMIN"}, "body": {"room_id": "$ROOM", "start_time": "<now-60s>", "end_time": "<now+3540s>"}, "expected_status": 400, "expected_response_shape": {"code": "INVALID_BOOKING_WINDOW"}, "expected_behavior": "Any past start rejected", "failure_signal": "201", "notes": "current 300s grace", "status": "untested"},
-    {"id": "T-WIN-ZERO", "title": "Zero duration rejected", "category": "booking", "rule": 2, "bug": "B3", "setup": "admin, room", "method": "POST", "path": "/bookings", "headers": {"Authorization": "Bearer $ADMIN"}, "body": {"room_id": "$ROOM", "start_time": "<t>", "end_time": "<t>"}, "expected_status": 400, "expected_response_shape": {"code": "INVALID_BOOKING_WINDOW"}, "expected_behavior": "end==start rejected", "failure_signal": "201 price 0", "notes": "", "status": "untested"},
-    {"id": "T-WIN-NEG", "title": "end before start rejected", "category": "booking", "rule": 2, "bug": "B3", "setup": "admin, room", "method": "POST", "path": "/bookings", "headers": {"Authorization": "Bearer $ADMIN"}, "body": {"room_id": "$ROOM", "start_time": "<t+1h>", "end_time": "<t>"}, "expected_status": 400, "expected_response_shape": {"code": "INVALID_BOOKING_WINDOW"}, "expected_behavior": "end<start rejected", "failure_signal": "201/negative price", "notes": "", "status": "untested"},
-    {"id": "T-WIN-9H", "title": "Duration 9h rejected", "category": "booking", "rule": 2, "setup": "admin, room", "method": "POST", "path": "/bookings", "headers": {"Authorization": "Bearer $ADMIN"}, "body": {"room_id": "$ROOM", "start_time": "<t>", "end_time": "<t+9h>"}, "expected_status": 400, "expected_response_shape": {"code": "INVALID_BOOKING_WINDOW"}, "expected_behavior": "max 8h", "failure_signal": "201", "notes": "", "status": "untested"},
-    {"id": "T-WIN-HALF", "title": "Non-whole hours rejected", "category": "booking", "rule": 2, "setup": "admin, room", "method": "POST", "path": "/bookings", "headers": {"Authorization": "Bearer $ADMIN"}, "body": {"room_id": "$ROOM", "start_time": "<t>", "end_time": "<t+90m>"}, "expected_status": 400, "expected_response_shape": {"code": "INVALID_BOOKING_WINDOW"}, "expected_behavior": "whole hours only", "failure_signal": "201", "notes": "", "status": "untested"},
-    {"id": "T-PRICE", "title": "Price = rate x hours", "category": "booking", "rule": 2, "setup": "room rate 1000", "method": "POST", "path": "/bookings", "headers": {"Authorization": "Bearer $ADMIN"}, "body": {"room_id": "$ROOM", "start_time": "<t>", "end_time": "<t+2h>"}, "expected_status": 201, "expected_response_shape": {"price_cents": 2000}, "expected_behavior": "2h x 1000 = 2000", "failure_signal": "wrong price", "notes": "", "status": "untested"},
-    {"id": "T-CONF-OVERLAP", "title": "Overlap rejected", "category": "booking", "rule": 3, "setup": "booking 10-12 exists", "method": "POST", "path": "/bookings", "headers": {"Authorization": "Bearer $ADMIN"}, "body": {"room_id": "$ROOM", "start_time": "<10:30>", "end_time": "<13:00>"}, "expected_status": 409, "expected_response_shape": {"code": "ROOM_CONFLICT"}, "expected_behavior": "true overlap rejected", "failure_signal": "201", "notes": "", "status": "untested"},
-    {"id": "T-CONF-BACK2BACK", "title": "Back-to-back allowed", "category": "booking", "rule": 3, "bug": "B1", "setup": "booking 10-11 exists", "method": "POST", "path": "/bookings", "headers": {"Authorization": "Bearer $ADMIN"}, "body": {"room_id": "$ROOM", "start_time": "<11:00>", "end_time": "<12:00>"}, "expected_status": 201, "expected_response_shape": {}, "expected_behavior": "adjacent bookings allowed", "failure_signal": "409", "notes": "key bug", "status": "untested"},
-    {"id": "T-QUOTA", "title": "4th booking in window rejected", "category": "booking", "rule": 4, "setup": "3 confirmed in (now,+24h]", "method": "POST", "path": "/bookings", "headers": {"Authorization": "Bearer $MEMBER"}, "body": {"room_id": "$ROOM", "start_time": "<in-window>", "end_time": "<+1h>"}, "expected_status": 409, "expected_response_shape": {"code": "QUOTA_EXCEEDED"}, "expected_behavior": "max 3 in window", "failure_signal": "201", "notes": "", "status": "untested"},
-    {"id": "T-QUOTA-OUTSIDE", "title": "Beyond 24h not quota-limited", "category": "booking", "rule": 4, "setup": "3 in window", "method": "POST", "path": "/bookings", "headers": {"Authorization": "Bearer $MEMBER"}, "body": {"room_id": "$ROOM", "start_time": "<now+30h>", "end_time": "<+1h>"}, "expected_status": 201, "expected_response_shape": {}, "expected_behavior": "window is (now,+24h]", "failure_signal": "409", "notes": "", "status": "untested"},
-    {"id": "T-LIST-ORDER", "title": "List ascending by start_time", "category": "listing", "rule": 11, "bug": "B5a", "setup": ">=2 bookings", "method": "GET", "path": "/bookings", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {"items": "ascending start_time"}, "expected_behavior": "asc start_time, ties asc id", "failure_signal": "descending", "notes": "", "status": "untested"},
-    {"id": "T-LIST-PAGE1", "title": "Page 1 returns first slice", "category": "listing", "rule": 11, "bug": "B5b", "setup": ">=11 bookings", "method": "GET", "path": "/bookings?page=1&limit=10", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {"items[0]": "first of ordering"}, "expected_behavior": "items [0,10)", "failure_signal": "skips first 10", "notes": "off-by-one", "status": "untested"},
-    {"id": "T-LIST-LIMIT", "title": "Limit honored", "category": "listing", "rule": 11, "bug": "B5c", "setup": ">=3 bookings", "method": "GET", "path": "/bookings?limit=2", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {"items_len": 2}, "expected_behavior": "returns exactly limit", "failure_signal": "returns up to 10", "notes": "", "status": "untested"},
-    {"id": "T-LIST-TOTAL", "title": "total equals full count", "category": "listing", "rule": 11, "setup": "N bookings", "method": "GET", "path": "/bookings", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {"total": "N"}, "expected_behavior": "total is unpaginated count", "failure_signal": "wrong total", "notes": "", "status": "untested"},
-    {"id": "T-VIS-IDOR-GET", "title": "Member cannot read other's booking", "category": "authz", "rule": 10, "bug": "B6", "setup": "bob books; alice is member", "method": "GET", "path": "/bookings/{bobBookingId}", "headers": {"Authorization": "Bearer $ALICE"}, "body": null, "expected_status": 404, "expected_response_shape": {"code": "BOOKING_NOT_FOUND"}, "expected_behavior": "other member's id is 404", "failure_signal": "200", "notes": "IDOR", "status": "untested"},
-    {"id": "T-VIS-ADMIN-GET", "title": "Admin reads any org booking", "category": "authz", "rule": 10, "setup": "bob books", "method": "GET", "path": "/bookings/{bobBookingId}", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {}, "expected_behavior": "admin sees org-wide", "failure_signal": "404", "notes": "", "status": "untested"},
-    {"id": "T-DETAIL-STARTTIME", "title": "Detail start_time correct", "category": "contract", "rule": 0, "bug": "B7", "setup": "one booking", "method": "GET", "path": "/bookings/{id}", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {"start_time": "== booked start"}, "expected_behavior": "start_time is the booking start", "failure_signal": "equals created_at", "notes": "", "status": "untested"},
-    {"id": "T-DETAIL-REFUNDS", "title": "Detail includes refunds array", "category": "contract", "rule": 0, "setup": "cancelled booking", "method": "GET", "path": "/bookings/{id}", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {"refunds": [{"amount_cents": "int", "status": "str", "processed_at": "str"}]}, "expected_behavior": "refunds present with shape", "failure_signal": "missing/wrong shape", "notes": "", "status": "untested"},
-    {"id": "T-REFUND-100", "title": ">=48h notice 100%", "category": "refund", "rule": 6, "setup": "booking start now+50h", "method": "POST", "path": "/bookings/{id}/cancel", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {"refund_percent": 100}, "expected_behavior": "full refund", "failure_signal": "other", "notes": "", "status": "untested"},
-    {"id": "T-REFUND-48", "title": "Exactly 48h is 100%", "category": "refund", "rule": 6, "bug": "B8a", "setup": "booking start now+48h", "method": "POST", "path": "/bookings/{id}/cancel", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {"refund_percent": 100}, "expected_behavior": "boundary inclusive", "failure_signal": "50", "notes": "boundary", "status": "untested"},
-    {"id": "T-REFUND-50", "title": "24-48h is 50%", "category": "refund", "rule": 6, "setup": "booking start now+30h", "method": "POST", "path": "/bookings/{id}/cancel", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {"refund_percent": 50}, "expected_behavior": "half refund", "failure_signal": "other", "notes": "", "status": "untested"},
-    {"id": "T-REFUND-0", "title": "<24h is 0%", "category": "refund", "rule": 6, "bug": "B8b", "setup": "booking start now+1h", "method": "POST", "path": "/bookings/{id}/cancel", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {"refund_percent": 0}, "expected_behavior": "no refund", "failure_signal": "50", "notes": "key bug", "status": "untested"},
-    {"id": "T-REFUND-ROUND", "title": "Half-cent rounds up", "category": "refund", "rule": 6, "bug": "B9", "setup": "price 1001, 50% tier", "method": "POST", "path": "/bookings/{id}/cancel", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {"refund_amount_cents": 501}, "expected_behavior": "50% of 1001 = 501", "failure_signal": "500", "notes": "", "status": "untested"},
-    {"id": "T-REFUND-CONSISTENT", "title": "Response equals RefundLog", "category": "refund", "rule": 6, "bug": "B9", "setup": "any cancel", "method": "COMPARE", "path": "cancel.refund_amount_cents vs GET /bookings/{id}.refunds[0].amount_cents", "headers": {}, "body": null, "expected_status": null, "expected_response_shape": {"equal": true}, "expected_behavior": "stored == returned", "failure_signal": "differ", "notes": "", "status": "untested"},
-    {"id": "T-CANCEL-DUP", "title": "Re-cancel is 409", "category": "refund", "rule": 6, "setup": "cancelled booking", "method": "POST", "path": "/bookings/{id}/cancel", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 409, "expected_response_shape": {"code": "ALREADY_CANCELLED"}, "expected_behavior": "idempotent guard", "failure_signal": "other", "notes": "", "status": "untested"},
-    {"id": "T-CANCEL-AUTH", "title": "Non-owner member cannot cancel", "category": "authz", "rule": 6, "setup": "bob books; alice member", "method": "POST", "path": "/bookings/{bobBookingId}/cancel", "headers": {"Authorization": "Bearer $ALICE"}, "body": null, "expected_status": 404, "expected_response_shape": {"code": "BOOKING_NOT_FOUND"}, "expected_behavior": "only owner or admin", "failure_signal": "200", "notes": "", "status": "untested"},
-    {"id": "T-AVAIL", "title": "Availability lists busy sorted", "category": "rooms", "rule": 13, "setup": "booking on date D", "method": "GET", "path": "/rooms/{id}/availability?date=D", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {"busy": "sorted intervals"}, "expected_behavior": "busy intervals ascending", "failure_signal": "missing/unsorted", "notes": "", "status": "untested"},
-    {"id": "T-AVAIL-STALE", "title": "Cancel updates availability", "category": "rooms", "rule": 13, "bug": "RM1", "setup": "book, GET avail (caches), cancel", "method": "GET", "path": "/rooms/{id}/availability?date=D", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {"busy": "excludes cancelled"}, "expected_behavior": "reflects current state", "failure_signal": "still busy (stale cache)", "notes": "", "status": "untested"},
-    {"id": "T-REPORT", "title": "Usage report per room", "category": "admin", "rule": 12, "setup": "bookings in range", "method": "GET", "path": "/admin/usage-report?from=F&to=T", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {"rooms": [{"room_id": "int", "confirmed_bookings": "int", "revenue_cents": "int"}]}, "expected_behavior": "includes zero-booking rooms", "failure_signal": "missing rooms/wrong sums", "notes": "", "status": "untested"},
-    {"id": "T-REPORT-STALE", "title": "Create updates report", "category": "admin", "rule": 12, "bug": "AD1", "setup": "GET report (caches), create booking", "method": "GET", "path": "/admin/usage-report?from=F&to=T", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {"reflects_new_booking": true}, "expected_behavior": "immediate current state", "failure_signal": "stale (unchanged)", "notes": "", "status": "untested"},
-    {"id": "T-REPORT-EXCL-CANCEL", "title": "Cancelled excluded from report", "category": "admin", "rule": 12, "setup": "cancelled booking", "method": "GET", "path": "/admin/usage-report?from=F&to=T", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {"excludes_cancelled": true}, "expected_behavior": "only confirmed counted", "failure_signal": "counted", "notes": "", "status": "untested"},
-    {"id": "T-STATS-DERIVED", "title": "Stats equal DB-derived", "category": "rooms", "rule": 14, "bug": "S1", "setup": "create then cancel", "method": "GET", "path": "/rooms/{id}/stats", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {"total_confirmed_bookings": "matches DB", "total_revenue_cents": "matches DB"}, "expected_behavior": "always equals bookings-derived values", "failure_signal": "drift after cancel/concurrency", "notes": "", "status": "untested"},
-    {"id": "T-EXPORT-HEADER", "title": "CSV header exact", "category": "admin", "rule": 0, "setup": "any", "method": "GET", "path": "/admin/export", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 200, "expected_response_shape": {"header": "id,reference_code,room_id,user_id,start_time,end_time,status,price_cents"}, "expected_behavior": "exact header order", "failure_signal": "wrong header", "notes": "", "status": "untested"},
-    {"id": "T-EXPORT-CROSSORG", "title": "Export cannot leak other org", "category": "security", "rule": 9, "bug": "EX1", "setup": "2 orgs, room in org2", "method": "GET", "path": "/admin/export?include_all=true&room_id={org2room}", "headers": {"Authorization": "Bearer $ORG1_ADMIN"}, "body": null, "expected_status": 404, "expected_response_shape": {"code": "ROOM_NOT_FOUND"}, "expected_behavior": "cross-org room is 404, no rows leaked", "failure_signal": "org2 bookings returned", "notes": "security", "status": "untested"},
-    {"id": "T-TENANT-ROOM", "title": "Cross-org room id 404", "category": "security", "rule": 9, "setup": "room in org2", "method": "GET", "path": "/rooms/{org2room}/availability?date=D", "headers": {"Authorization": "Bearer $ORG1_USER"}, "body": null, "expected_status": 404, "expected_response_shape": {"code": "ROOM_NOT_FOUND"}, "expected_behavior": "cross-org resource behaves as non-existent", "failure_signal": "200/leak", "notes": "", "status": "untested"},
-    {"id": "T-ADMIN-ONLY-CREATE", "title": "Member cannot create room", "category": "authz", "rule": 0, "setup": "member token", "method": "POST", "path": "/rooms", "headers": {"Authorization": "Bearer $MEMBER"}, "body": {"name": "X", "capacity": 2, "hourly_rate_cents": 500}, "expected_status": 403, "expected_response_shape": {"code": "FORBIDDEN"}, "expected_behavior": "admin-only", "failure_signal": "201", "notes": "", "status": "untested"},
-    {"id": "T-REF-UNIQUE", "title": "Reference codes unique under concurrency", "category": "concurrency", "rule": 7, "bug": "REF1", "setup": "admin, room", "method": "CONCURRENT", "path": "POST /bookings x10 distinct slots", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": 201, "expected_response_shape": {"reference_codes": "all distinct"}, "expected_behavior": "no duplicate codes", "failure_signal": "duplicates", "notes": "needs concurrency runner", "status": "untested"},
-    {"id": "T-CONF-CONC", "title": "No double-book under concurrency", "category": "concurrency", "rule": 3, "bug": "B-CONC", "setup": "admin, room", "method": "CONCURRENT", "path": "POST /bookings x5 identical slot", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": null, "expected_response_shape": {"success_count": 1}, "expected_behavior": "exactly one 201, rest 409", "failure_signal": ">=2 success", "notes": "", "status": "untested"},
-    {"id": "T-QUOTA-CONC", "title": "Quota holds under concurrency", "category": "concurrency", "rule": 4, "bug": "B-CONC", "setup": "member at 3-in-window", "method": "CONCURRENT", "path": "POST /bookings x2 (4th,5th)", "headers": {"Authorization": "Bearer $MEMBER"}, "body": null, "expected_status": null, "expected_response_shape": {"confirmed_in_window_max": 3}, "expected_behavior": "quota not exceeded", "failure_signal": ">3 confirmed", "notes": "", "status": "untested"},
-    {"id": "T-RATE", "title": "Rate limit 20 per 60s", "category": "ratelimit", "rule": 5, "setup": "member", "method": "SEQUENCE", "path": "POST /bookings x21 within 60s", "headers": {"Authorization": "Bearer $MEMBER"}, "body": null, "expected_status": 429, "expected_response_shape": {"code": "RATE_LIMITED"}, "expected_behavior": "21st rejected; all requests count", "failure_signal": "all 201", "notes": "", "status": "untested"},
-    {"id": "T-RATE-CONC", "title": "Rate limit under concurrency", "category": "concurrency", "rule": 5, "bug": "RL1", "setup": "member", "method": "CONCURRENT", "path": "POST /bookings x30", "headers": {"Authorization": "Bearer $MEMBER"}, "body": null, "expected_status": null, "expected_response_shape": {"passed_max": 20}, "expected_behavior": "at most 20 pass", "failure_signal": ">20 pass", "notes": "", "status": "untested"},
-    {"id": "T-LIVENESS-DEADLOCK", "title": "No hang on concurrent create+cancel", "category": "concurrency", "rule": 16, "bug": "N1", "setup": "booking exists", "method": "CONCURRENT", "path": "POST /bookings + POST /bookings/{id}/cancel", "headers": {"Authorization": "Bearer $ADMIN"}, "body": null, "expected_status": null, "expected_response_shape": {"both_return": true}, "expected_behavior": "no deadlock, prompt responses", "failure_signal": "request hangs/timeout", "notes": "lock-ordering deadlock", "status": "untested"},
-    {"id": "T-AUTH-MISSING", "title": "No token 401", "category": "auth", "rule": 8, "setup": "none", "method": "GET", "path": "/rooms", "headers": {}, "body": null, "expected_status": 401, "expected_response_shape": {}, "expected_behavior": "missing token rejected", "failure_signal": "other", "notes": "", "status": "untested"},
-    {"id": "T-AUTH-EXPIRED", "title": "Blacklisted token 401", "category": "auth", "rule": 8, "setup": "logged-out token", "method": "GET", "path": "/rooms", "headers": {"Authorization": "Bearer $LOGGED_OUT"}, "body": null, "expected_status": 401, "expected_response_shape": {}, "expected_behavior": "revoked token rejected", "failure_signal": "200", "notes": "", "status": "untested"}
+    {
+      "id": "T-REG-ADMIN",
+      "title": "Register unknown org -> admin",
+      "category": "auth",
+      "rule": 15,
+      "endpoint": "POST /auth/register",
+      "critical": false,
+      "setup": "",
+      "method": "POST",
+      "path": "/auth/register",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "org_name": "acme",
+        "username": "admin",
+        "password": "pw12345"
+      },
+      "expected_status": 201,
+      "expected_response_shape": {
+        "user_id": "int",
+        "org_id": "int",
+        "username": "str",
+        "role": "admin"
+      },
+      "expected_behavior": "First user in unknown org becomes admin",
+      "failure_signal": "role != admin",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-REG-MEMBER",
+      "title": "Register known org -> member",
+      "category": "auth",
+      "rule": 15,
+      "endpoint": "POST /auth/register",
+      "critical": false,
+      "setup": "org acme exists",
+      "method": "POST",
+      "path": "/auth/register",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "org_name": "acme",
+        "username": "bob",
+        "password": "pw12345"
+      },
+      "expected_status": 201,
+      "expected_response_shape": {
+        "role": "member"
+      },
+      "expected_behavior": "Known org join = member",
+      "failure_signal": "role != member",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-REG-DUP",
+      "title": "Duplicate username -> 409 USERNAME_TAKEN",
+      "category": "auth",
+      "rule": 15,
+      "endpoint": "POST /auth/register",
+      "critical": true,
+      "setup": "user exists",
+      "method": "POST",
+      "path": "/auth/register",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "org_name": "acme",
+        "username": "bob",
+        "password": "pw12345"
+      },
+      "expected_status": 409,
+      "expected_response_shape": {
+        "code": "USERNAME_TAKEN"
+      },
+      "expected_behavior": "Duplicate username within org rejected",
+      "failure_signal": "200 or 500",
+      "notes": "currently returns 200",
+      "status": "untested",
+      "bug": "A4"
+    },
+    {
+      "id": "T-REG-422",
+      "title": "Missing field -> 422 framework validation",
+      "category": "validation",
+      "rule": 15,
+      "endpoint": "POST /auth/register",
+      "critical": false,
+      "setup": "",
+      "method": "POST",
+      "path": "/auth/register",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "org_name": "acme",
+        "username": "noPass"
+      },
+      "expected_status": 422,
+      "expected_response_shape": {
+        "detail": "list"
+      },
+      "expected_behavior": "Missing required field triggers FastAPI 422",
+      "failure_signal": "non-422",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-LOGIN-OK",
+      "title": "Login returns token pair",
+      "category": "auth",
+      "rule": 8,
+      "endpoint": "POST /auth/login",
+      "critical": false,
+      "setup": "user exists",
+      "method": "POST",
+      "path": "/auth/login",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "org_name": "acme",
+        "username": "admin",
+        "password": "pw12345"
+      },
+      "expected_status": 200,
+      "expected_response_shape": {
+        "access_token": "str",
+        "refresh_token": "str",
+        "token_type": "bearer"
+      },
+      "expected_behavior": "Valid creds return access+refresh+bearer",
+      "failure_signal": "non-200 or missing token",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-LOGIN-BAD",
+      "title": "Bad credentials -> 401",
+      "category": "auth",
+      "rule": 8,
+      "endpoint": "POST /auth/login",
+      "critical": true,
+      "setup": "user exists",
+      "method": "POST",
+      "path": "/auth/login",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "org_name": "acme",
+        "username": "admin",
+        "password": "wrong"
+      },
+      "expected_status": 401,
+      "expected_response_shape": {
+        "code": "INVALID_CREDENTIALS"
+      },
+      "expected_behavior": "Wrong password rejected",
+      "failure_signal": "other status",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-LOGIN-UNKNOWN-ORG",
+      "title": "Login unknown org -> 401",
+      "category": "auth",
+      "rule": 8,
+      "endpoint": "POST /auth/login",
+      "critical": false,
+      "setup": "",
+      "method": "POST",
+      "path": "/auth/login",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "org_name": "nope",
+        "username": "x",
+        "password": "y"
+      },
+      "expected_status": 401,
+      "expected_response_shape": {
+        "code": "INVALID_CREDENTIALS"
+      },
+      "expected_behavior": "Unknown org treated as invalid creds",
+      "failure_signal": "500 or other",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-AUTH-REFRESH-ROTATE",
+      "title": "Refresh rotates tokens",
+      "category": "auth",
+      "rule": 8,
+      "endpoint": "POST /auth/refresh",
+      "critical": false,
+      "setup": "login",
+      "method": "POST",
+      "path": "/auth/refresh",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "refresh_token": "$REFRESH"
+      },
+      "expected_status": 200,
+      "expected_response_shape": {
+        "access_token": "str",
+        "refresh_token": "str",
+        "token_type": "bearer"
+      },
+      "expected_behavior": "Refresh returns a new access+refresh pair",
+      "failure_signal": "non-200",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-AUTH-REFRESH-REUSE",
+      "title": "Refresh token single-use",
+      "category": "auth",
+      "rule": 8,
+      "endpoint": "POST /auth/refresh",
+      "critical": true,
+      "setup": "refreshed once",
+      "method": "POST",
+      "path": "/auth/refresh",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "refresh_token": "$OLD_REFRESH"
+      },
+      "expected_status": 401,
+      "expected_response_shape": {},
+      "expected_behavior": "Presented refresh token invalidated after one use",
+      "failure_signal": "200 (reusable)",
+      "notes": "",
+      "status": "untested",
+      "bug": "A5"
+    },
+    {
+      "id": "T-AUTH-REFRESH-WRONGTYPE",
+      "title": "Access token in refresh body -> 401",
+      "category": "auth",
+      "rule": 8,
+      "endpoint": "POST /auth/refresh",
+      "critical": false,
+      "setup": "login",
+      "method": "POST",
+      "path": "/auth/refresh",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "refresh_token": "$ACCESS"
+      },
+      "expected_status": 401,
+      "expected_response_shape": {},
+      "expected_behavior": "Non-refresh token rejected on refresh",
+      "failure_signal": "200",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-AUTH-LOGOUT",
+      "title": "Logout invalidates presented access token",
+      "category": "auth",
+      "rule": 8,
+      "endpoint": "POST /auth/logout",
+      "critical": true,
+      "setup": "login",
+      "method": "SEQUENCE",
+      "path": "/auth/logout then GET /rooms with same token",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 401,
+      "expected_response_shape": {},
+      "expected_behavior": "Reusing access token after logout -> 401",
+      "failure_signal": "200 after logout",
+      "notes": "",
+      "status": "untested",
+      "bug": "A2"
+    },
+    {
+      "id": "T-LOGOUT-NOAUTH",
+      "title": "Logout without token -> 401",
+      "category": "auth",
+      "rule": 8,
+      "endpoint": "POST /auth/logout",
+      "critical": false,
+      "setup": "",
+      "method": "POST",
+      "path": "/auth/logout",
+      "headers": {},
+      "body": null,
+      "expected_status": 401,
+      "expected_response_shape": {},
+      "expected_behavior": "Logout requires a valid access token",
+      "failure_signal": "other",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-JWT-EXP",
+      "title": "Access token exp-iat == 900s",
+      "category": "auth",
+      "rule": 8,
+      "endpoint": "POST /auth/login",
+      "critical": true,
+      "setup": "login",
+      "method": "DECODE",
+      "path": "access_token",
+      "headers": {},
+      "body": null,
+      "expected_status": null,
+      "expected_response_shape": {
+        "exp_minus_iat": 900
+      },
+      "expected_behavior": "Access token lifetime is exactly 900 seconds",
+      "failure_signal": "54000 or other",
+      "notes": "decode JWT payload without verifying signature",
+      "status": "untested",
+      "bug": "A1"
+    },
+    {
+      "id": "T-JWT-REFRESH-EXP",
+      "title": "Refresh token exp-iat == 604800s",
+      "category": "auth",
+      "rule": 8,
+      "endpoint": "POST /auth/login",
+      "critical": false,
+      "setup": "login",
+      "method": "DECODE",
+      "path": "refresh_token",
+      "headers": {},
+      "body": null,
+      "expected_status": null,
+      "expected_response_shape": {
+        "exp_minus_iat": 604800
+      },
+      "expected_behavior": "Refresh token lifetime is 7 days",
+      "failure_signal": "wrong lifetime",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-JWT-CLAIMS",
+      "title": "Access token carries required claims",
+      "category": "auth",
+      "rule": 8,
+      "endpoint": "POST /auth/login",
+      "critical": true,
+      "setup": "login",
+      "method": "DECODE",
+      "path": "access_token",
+      "headers": {},
+      "body": null,
+      "expected_status": null,
+      "expected_response_shape": {
+        "sub": "str",
+        "org": "int",
+        "role": "str",
+        "jti": "str",
+        "iat": "int",
+        "exp": "int",
+        "type": "access"
+      },
+      "expected_behavior": "JWT includes sub(str),org,role,jti,iat,exp,type",
+      "failure_signal": "missing/renamed claim",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-AUTH-MISSING",
+      "title": "No token on protected route -> 401",
+      "category": "auth",
+      "rule": 8,
+      "endpoint": "GET /rooms",
+      "critical": true,
+      "setup": "",
+      "method": "GET",
+      "path": "/rooms",
+      "headers": {},
+      "body": null,
+      "expected_status": 401,
+      "expected_response_shape": {},
+      "expected_behavior": "Missing Authorization header rejected",
+      "failure_signal": "other",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-AUTH-BADTOKEN",
+      "title": "Garbage token -> 401",
+      "category": "auth",
+      "rule": 8,
+      "endpoint": "GET /rooms",
+      "critical": false,
+      "setup": "",
+      "method": "GET",
+      "path": "/rooms",
+      "headers": {
+        "Authorization": "Bearer not.a.jwt"
+      },
+      "body": null,
+      "expected_status": 401,
+      "expected_response_shape": {},
+      "expected_behavior": "Invalid/undecodable token rejected",
+      "failure_signal": "200/500",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-AUTH-EXPIRED",
+      "title": "Blacklisted (logged-out) token -> 401",
+      "category": "auth",
+      "rule": 8,
+      "endpoint": "GET /rooms",
+      "critical": false,
+      "setup": "logged-out token",
+      "method": "GET",
+      "path": "/rooms",
+      "headers": {
+        "Authorization": "Bearer $LOGGED_OUT"
+      },
+      "body": null,
+      "expected_status": 401,
+      "expected_response_shape": {},
+      "expected_behavior": "Revoked token rejected on later use",
+      "failure_signal": "200",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-AUTH-REFRESH-AS-ACCESS",
+      "title": "Refresh token used as Bearer -> 401",
+      "category": "auth",
+      "rule": 8,
+      "endpoint": "GET /rooms",
+      "critical": false,
+      "setup": "",
+      "method": "GET",
+      "path": "/rooms",
+      "headers": {
+        "Authorization": "Bearer $REFRESH"
+      },
+      "body": null,
+      "expected_status": 401,
+      "expected_response_shape": {},
+      "expected_behavior": "type=refresh rejected on access-protected route",
+      "failure_signal": "200",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-ROOMS-LIST",
+      "title": "List rooms in caller's org",
+      "category": "rooms",
+      "rule": 9,
+      "endpoint": "GET /rooms",
+      "critical": false,
+      "setup": "",
+      "method": "GET",
+      "path": "/rooms",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "[]": {
+          "id": "int",
+          "org_id": "int",
+          "name": "str",
+          "capacity": "int",
+          "hourly_rate_cents": "int"
+        }
+      },
+      "expected_behavior": "Returns rooms for caller's org ordered by id",
+      "failure_signal": "wrong/foreign rooms",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-ROOM-CREATE",
+      "title": "Admin creates room",
+      "category": "rooms",
+      "rule": 2,
+      "endpoint": "POST /rooms",
+      "critical": false,
+      "setup": "",
+      "method": "POST",
+      "path": "/rooms",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "name": "Focus",
+        "capacity": 4,
+        "hourly_rate_cents": 1000
+      },
+      "expected_status": 201,
+      "expected_response_shape": {
+        "id": "int",
+        "org_id": "int",
+        "name": "str",
+        "capacity": "int",
+        "hourly_rate_cents": "int"
+      },
+      "expected_behavior": "Admin creates a room in own org",
+      "failure_signal": "non-201/wrong shape",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-ROOM-CREATE-FORBIDDEN",
+      "title": "Member cannot create room -> 403",
+      "category": "authz",
+      "rule": 9,
+      "endpoint": "POST /rooms",
+      "critical": true,
+      "setup": "",
+      "method": "POST",
+      "path": "/rooms",
+      "headers": {
+        "Authorization": "Bearer $MEMBER"
+      },
+      "body": {
+        "name": "X",
+        "capacity": 2,
+        "hourly_rate_cents": 500
+      },
+      "expected_status": 403,
+      "expected_response_shape": {
+        "code": "FORBIDDEN"
+      },
+      "expected_behavior": "Only admin may create rooms",
+      "failure_signal": "201",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-ROOMS-LIST-TENANT",
+      "title": "Room list is org-scoped",
+      "category": "tenancy",
+      "rule": 9,
+      "endpoint": "GET /rooms",
+      "critical": true,
+      "setup": "two orgs with rooms",
+      "method": "GET",
+      "path": "/rooms",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "only_own_org": true
+      },
+      "expected_behavior": "Caller never sees another org's rooms",
+      "failure_signal": "foreign-org rooms present",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-AVAIL",
+      "title": "Availability lists busy intervals sorted",
+      "category": "rooms",
+      "rule": 13,
+      "endpoint": "GET /rooms/{id}/availability",
+      "critical": false,
+      "setup": "booking on date D",
+      "method": "GET",
+      "path": "/rooms/$ROOM/availability?date=$D",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "room_id": "int",
+        "date": "str",
+        "busy": [
+          {
+            "start_time": "str",
+            "end_time": "str"
+          }
+        ]
+      },
+      "expected_behavior": "Confirmed bookings on date returned as sorted busy intervals",
+      "failure_signal": "missing/unsorted",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-AVAIL-CREATE-IMMEDIATE",
+      "title": "New booking appears immediately",
+      "category": "rooms",
+      "rule": 13,
+      "endpoint": "GET /rooms/{id}/availability",
+      "critical": false,
+      "setup": "GET avail (cache), create booking",
+      "method": "GET",
+      "path": "/rooms/$ROOM/availability?date=$D",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "busy_includes_new": true
+      },
+      "expected_behavior": "Availability reflects newly created booking at once",
+      "failure_signal": "new booking missing (stale)",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-AVAIL-STALE",
+      "title": "Cancel reflected in availability",
+      "category": "rooms",
+      "rule": 13,
+      "endpoint": "GET /rooms/{id}/availability",
+      "critical": true,
+      "setup": "book, GET avail (cache), cancel",
+      "method": "GET",
+      "path": "/rooms/$ROOM/availability?date=$D",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "busy_excludes_cancelled": true
+      },
+      "expected_behavior": "Cancelled booking removed from busy immediately",
+      "failure_signal": "still busy (stale cache)",
+      "notes": "",
+      "status": "untested",
+      "bug": "RM1"
+    },
+    {
+      "id": "T-AVAIL-DATE-FILTER",
+      "title": "Only bookings starting that UTC date",
+      "category": "rooms",
+      "rule": 13,
+      "endpoint": "GET /rooms/{id}/availability",
+      "critical": false,
+      "setup": "",
+      "method": "GET",
+      "path": "/rooms/$ROOM/availability?date=$D",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "only_that_date": true
+      },
+      "expected_behavior": "Bookings starting on other dates excluded",
+      "failure_signal": "wrong-day intervals present",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-TENANT-ROOM",
+      "title": "Cross-org room id -> 404",
+      "category": "tenancy",
+      "rule": 9,
+      "endpoint": "GET /rooms/{id}/availability",
+      "critical": true,
+      "setup": "",
+      "method": "GET",
+      "path": "/rooms/$OTHER_ORG_ROOM/availability?date=$D",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 404,
+      "expected_response_shape": {
+        "code": "ROOM_NOT_FOUND"
+      },
+      "expected_behavior": "Foreign-org room behaves as non-existent",
+      "failure_signal": "200/leak",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-STATS-DERIVED",
+      "title": "Stats equal DB-derived values",
+      "category": "rooms",
+      "rule": 14,
+      "endpoint": "GET /rooms/{id}/stats",
+      "critical": true,
+      "setup": "create then cancel",
+      "method": "GET",
+      "path": "/rooms/$ROOM/stats",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "room_id": "int",
+        "total_confirmed_bookings": "int",
+        "total_revenue_cents": "int"
+      },
+      "expected_behavior": "count/revenue always match confirmed bookings (create then cancel)",
+      "failure_signal": "drift from DB",
+      "notes": "",
+      "status": "untested",
+      "bug": "S1"
+    },
+    {
+      "id": "T-STATS-CONC",
+      "title": "Stats consistent after concurrent bursts",
+      "category": "concurrency",
+      "rule": 14,
+      "endpoint": "GET /rooms/{id}/stats",
+      "critical": true,
+      "setup": "burst of concurrent create+cancel",
+      "method": "CONCURRENT",
+      "path": "/rooms/$ROOM/stats after N concurrent create/cancel",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "consistent_with_bookings": true
+      },
+      "expected_behavior": "Stats reconcile with bookings after concurrency",
+      "failure_signal": "counter drift/race",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-TENANT-STATS",
+      "title": "Cross-org stats -> 404",
+      "category": "tenancy",
+      "rule": 9,
+      "endpoint": "GET /rooms/{id}/stats",
+      "critical": false,
+      "setup": "",
+      "method": "GET",
+      "path": "/rooms/$OTHER_ORG_ROOM/stats",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 404,
+      "expected_response_shape": {
+        "code": "ROOM_NOT_FOUND"
+      },
+      "expected_behavior": "Foreign-org room stats non-existent",
+      "failure_signal": "200/leak",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-PRICE",
+      "title": "Price = rate x whole hours",
+      "category": "booking",
+      "rule": 2,
+      "endpoint": "POST /bookings",
+      "critical": false,
+      "setup": "room rate 1000",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "<t>",
+        "end_time": "<t+2h>"
+      },
+      "expected_status": 201,
+      "expected_response_shape": {
+        "price_cents": 2000
+      },
+      "expected_behavior": "2h at 1000/hr = 2000",
+      "failure_signal": "wrong price",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-WIN-MIN",
+      "title": "1h duration allowed (min boundary)",
+      "category": "booking",
+      "rule": 2,
+      "endpoint": "POST /bookings",
+      "critical": false,
+      "setup": "",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "<t>",
+        "end_time": "<t+1h>"
+      },
+      "expected_status": 201,
+      "expected_response_shape": {
+        "price_cents": "int"
+      },
+      "expected_behavior": "Duration 1h accepted",
+      "failure_signal": "400",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-WIN-MAX",
+      "title": "8h duration allowed (max boundary)",
+      "category": "booking",
+      "rule": 2,
+      "endpoint": "POST /bookings",
+      "critical": false,
+      "setup": "",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "<t>",
+        "end_time": "<t+8h>"
+      },
+      "expected_status": 201,
+      "expected_response_shape": {
+        "price_cents": "int"
+      },
+      "expected_behavior": "Duration 8h accepted",
+      "failure_signal": "400",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-WIN-9H",
+      "title": "9h duration -> 400",
+      "category": "booking",
+      "rule": 2,
+      "endpoint": "POST /bookings",
+      "critical": false,
+      "setup": "",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "<t>",
+        "end_time": "<t+9h>"
+      },
+      "expected_status": 400,
+      "expected_response_shape": {
+        "code": "INVALID_BOOKING_WINDOW"
+      },
+      "expected_behavior": "Duration over 8h rejected",
+      "failure_signal": "201",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-WIN-HALF",
+      "title": "Non-whole hours -> 400",
+      "category": "booking",
+      "rule": 2,
+      "endpoint": "POST /bookings",
+      "critical": false,
+      "setup": "",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "<t>",
+        "end_time": "<t+90m>"
+      },
+      "expected_status": 400,
+      "expected_response_shape": {
+        "code": "INVALID_BOOKING_WINDOW"
+      },
+      "expected_behavior": "1.5h rejected (whole hours only)",
+      "failure_signal": "201",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-WIN-ZERO",
+      "title": "end == start -> 400",
+      "category": "booking",
+      "rule": 2,
+      "endpoint": "POST /bookings",
+      "critical": true,
+      "setup": "",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "<t>",
+        "end_time": "<t>"
+      },
+      "expected_status": 400,
+      "expected_response_shape": {
+        "code": "INVALID_BOOKING_WINDOW"
+      },
+      "expected_behavior": "Zero-length booking rejected",
+      "failure_signal": "201 price 0",
+      "notes": "",
+      "status": "untested",
+      "bug": "B3"
+    },
+    {
+      "id": "T-WIN-NEG",
+      "title": "end < start -> 400",
+      "category": "booking",
+      "rule": 2,
+      "endpoint": "POST /bookings",
+      "critical": true,
+      "setup": "",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "<t+1h>",
+        "end_time": "<t>"
+      },
+      "expected_status": 400,
+      "expected_response_shape": {
+        "code": "INVALID_BOOKING_WINDOW"
+      },
+      "expected_behavior": "end before start rejected",
+      "failure_signal": "201/negative price",
+      "notes": "",
+      "status": "untested",
+      "bug": "B3"
+    },
+    {
+      "id": "T-WIN-PAST",
+      "title": "Past start (no grace) -> 400",
+      "category": "booking",
+      "rule": 2,
+      "endpoint": "POST /bookings",
+      "critical": true,
+      "setup": "",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "<now-60s>",
+        "end_time": "<now+3540s>"
+      },
+      "expected_status": 400,
+      "expected_response_shape": {
+        "code": "INVALID_BOOKING_WINDOW"
+      },
+      "expected_behavior": "start_time strictly future; any past rejected",
+      "failure_signal": "201",
+      "notes": "current 300s grace bug",
+      "status": "untested",
+      "bug": "B2"
+    },
+    {
+      "id": "T-WIN-FUTURE-OK",
+      "title": "Near-future start accepted",
+      "category": "booking",
+      "rule": 2,
+      "endpoint": "POST /bookings",
+      "critical": false,
+      "setup": "",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "<now+2h>",
+        "end_time": "<now+3h>"
+      },
+      "expected_status": 201,
+      "expected_response_shape": {},
+      "expected_behavior": "Start a few minutes ahead is valid",
+      "failure_signal": "400",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-TZ-OFFSET",
+      "title": "Offset input converted to UTC",
+      "category": "time",
+      "rule": 1,
+      "endpoint": "POST /bookings",
+      "critical": true,
+      "setup": "admin, room",
+      "method": "SEQUENCE",
+      "path": "POST /bookings offset then read back",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "2026-12-01T12:00:00+06:00",
+        "end_time": "2026-12-01T13:00:00+06:00"
+      },
+      "expected_status": 201,
+      "expected_response_shape": {
+        "stored_start_utc": "2026-12-01T06:00:00+00:00"
+      },
+      "expected_behavior": "12:00+06:00 stored/echoed as 06:00Z",
+      "failure_signal": "echoes 12:00 (offset dropped)",
+      "notes": "",
+      "status": "untested",
+      "bug": "T1"
+    },
+    {
+      "id": "T-TZ-NAIVE",
+      "title": "Naive input treated as UTC",
+      "category": "time",
+      "rule": 1,
+      "endpoint": "POST /bookings",
+      "critical": false,
+      "setup": "",
+      "method": "SEQUENCE",
+      "path": "POST /bookings naive then read back",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "2026-12-01T12:00:00",
+        "end_time": "2026-12-01T13:00:00"
+      },
+      "expected_status": 201,
+      "expected_response_shape": {
+        "stored_start_utc": "2026-12-01T12:00:00+00:00"
+      },
+      "expected_behavior": "Naive 12:00 stored as 12:00Z",
+      "failure_signal": "shifted by local tz",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-TZ-RESPONSE-DESIGNATOR",
+      "title": "Response datetimes carry UTC designator",
+      "category": "time",
+      "rule": 1,
+      "endpoint": "POST /bookings",
+      "critical": false,
+      "setup": "",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "<t>",
+        "end_time": "<t+1h>"
+      },
+      "expected_status": 201,
+      "expected_response_shape": {
+        "start_time_has_utc_designator": true,
+        "created_at_has_utc_designator": true
+      },
+      "expected_behavior": "All response datetimes end with Z or +00:00",
+      "failure_signal": "naive/no designator",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-CONF-OVERLAP",
+      "title": "Overlapping confirmed -> 409",
+      "category": "booking",
+      "rule": 3,
+      "endpoint": "POST /bookings",
+      "critical": false,
+      "setup": "booking 10-12 exists",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "<10:30>",
+        "end_time": "<13:00>"
+      },
+      "expected_status": 409,
+      "expected_response_shape": {
+        "code": "ROOM_CONFLICT"
+      },
+      "expected_behavior": "True overlap rejected",
+      "failure_signal": "201",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-CONF-BACK2BACK",
+      "title": "Back-to-back allowed",
+      "category": "booking",
+      "rule": 3,
+      "endpoint": "POST /bookings",
+      "critical": true,
+      "setup": "booking 10-11 exists",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "<11:00>",
+        "end_time": "<12:00>"
+      },
+      "expected_status": 201,
+      "expected_response_shape": {},
+      "expected_behavior": "Adjacent bookings (end==start) allowed",
+      "failure_signal": "409",
+      "notes": "",
+      "status": "untested",
+      "bug": "B1"
+    },
+    {
+      "id": "T-CONF-CANCELLED-IGNORED",
+      "title": "Cancelled booking does not block",
+      "category": "booking",
+      "rule": 3,
+      "endpoint": "POST /bookings",
+      "critical": false,
+      "setup": "overlapping booking cancelled",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "<10:30>",
+        "end_time": "<11:30>"
+      },
+      "expected_status": 201,
+      "expected_response_shape": {},
+      "expected_behavior": "Overlap with a cancelled booking is allowed",
+      "failure_signal": "409",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-CONF-CONC",
+      "title": "No double-book under concurrency",
+      "category": "concurrency",
+      "rule": 3,
+      "endpoint": "POST /bookings",
+      "critical": true,
+      "setup": "admin, room",
+      "method": "CONCURRENT",
+      "path": "5x identical-slot POST /bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": null,
+      "expected_response_shape": {
+        "success_count": 1
+      },
+      "expected_behavior": "Exactly one 201, others 409 under concurrency",
+      "failure_signal": ">=2 success",
+      "notes": "",
+      "status": "untested",
+      "bug": "B-CONC"
+    },
+    {
+      "id": "T-QUOTA",
+      "title": "4th booking in window -> 409",
+      "category": "booking",
+      "rule": 4,
+      "endpoint": "POST /bookings",
+      "critical": true,
+      "setup": "3 confirmed in window",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $MEMBER"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "<in-window>",
+        "end_time": "<+1h>"
+      },
+      "expected_status": 409,
+      "expected_response_shape": {
+        "code": "QUOTA_EXCEEDED"
+      },
+      "expected_behavior": "Max 3 confirmed in (now,+24h]",
+      "failure_signal": "201",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-QUOTA-OUTSIDE",
+      "title": "Start beyond 24h not quota-limited",
+      "category": "booking",
+      "rule": 4,
+      "endpoint": "POST /bookings",
+      "critical": false,
+      "setup": "3 in window",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $MEMBER"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "<now+30h>",
+        "end_time": "<+1h>"
+      },
+      "expected_status": 201,
+      "expected_response_shape": {},
+      "expected_behavior": "Window is (now,+24h]; later start unaffected",
+      "failure_signal": "409",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-QUOTA-CANCELLED",
+      "title": "Cancelled booking frees quota",
+      "category": "booking",
+      "rule": 4,
+      "endpoint": "POST /bookings",
+      "critical": false,
+      "setup": "3 in window, one cancelled",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $MEMBER"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "<in-window>",
+        "end_time": "<+1h>"
+      },
+      "expected_status": 201,
+      "expected_response_shape": {},
+      "expected_behavior": "Only confirmed count toward quota",
+      "failure_signal": "409",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-QUOTA-CONC",
+      "title": "Quota holds under concurrency",
+      "category": "concurrency",
+      "rule": 4,
+      "endpoint": "POST /bookings",
+      "critical": true,
+      "setup": "member at 3-in-window",
+      "method": "CONCURRENT",
+      "path": "concurrent 4th+5th while at limit",
+      "headers": {
+        "Authorization": "Bearer $MEMBER"
+      },
+      "body": null,
+      "expected_status": null,
+      "expected_response_shape": {
+        "confirmed_in_window_max": 3
+      },
+      "expected_behavior": "Never exceeds 3 confirmed in window under concurrency",
+      "failure_signal": ">3 confirmed",
+      "notes": "",
+      "status": "untested",
+      "bug": "B-CONC"
+    },
+    {
+      "id": "T-RATE",
+      "title": "21st request in 60s -> 429",
+      "category": "ratelimit",
+      "rule": 5,
+      "endpoint": "POST /bookings",
+      "critical": true,
+      "setup": "member",
+      "method": "SEQUENCE",
+      "path": "21x POST /bookings within 60s",
+      "headers": {
+        "Authorization": "Bearer $MEMBER"
+      },
+      "body": null,
+      "expected_status": 429,
+      "expected_response_shape": {
+        "code": "RATE_LIMITED"
+      },
+      "expected_behavior": "20/60s per user; all requests count; 21st rejected",
+      "failure_signal": "all 201",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-RATE-CONC",
+      "title": "Rate limit holds under concurrency",
+      "category": "concurrency",
+      "rule": 5,
+      "endpoint": "POST /bookings",
+      "critical": true,
+      "setup": "member",
+      "method": "CONCURRENT",
+      "path": "30x concurrent POST /bookings",
+      "headers": {
+        "Authorization": "Bearer $MEMBER"
+      },
+      "body": null,
+      "expected_status": null,
+      "expected_response_shape": {
+        "passed_max": 20
+      },
+      "expected_behavior": "At most 20 pass under concurrency",
+      "failure_signal": ">20 pass",
+      "notes": "",
+      "status": "untested",
+      "bug": "RL1"
+    },
+    {
+      "id": "T-BOOK-ROOM-NOTFOUND",
+      "title": "Booking unknown/cross-org room -> 404",
+      "category": "tenancy",
+      "rule": 9,
+      "endpoint": "POST /bookings",
+      "critical": true,
+      "setup": "",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "room_id": "$OTHER_ORG_ROOM",
+        "start_time": "<t>",
+        "end_time": "<t+1h>"
+      },
+      "expected_status": 404,
+      "expected_response_shape": {
+        "code": "ROOM_NOT_FOUND"
+      },
+      "expected_behavior": "Nonexistent or foreign-org room rejected",
+      "failure_signal": "201/500",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-REF-UNIQUE",
+      "title": "Reference codes unique under concurrency",
+      "category": "concurrency",
+      "rule": 7,
+      "endpoint": "POST /bookings",
+      "critical": true,
+      "setup": "admin, room",
+      "method": "CONCURRENT",
+      "path": "10x concurrent POST /bookings distinct slots",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 201,
+      "expected_response_shape": {
+        "reference_codes": "all distinct"
+      },
+      "expected_behavior": "No duplicate reference_code even concurrently",
+      "failure_signal": "duplicate codes",
+      "notes": "",
+      "status": "untested",
+      "bug": "REF1"
+    },
+    {
+      "id": "T-REF-FORMAT",
+      "title": "Reference code format CW-######",
+      "category": "booking",
+      "rule": 7,
+      "endpoint": "POST /bookings",
+      "critical": false,
+      "setup": "",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "room_id": "$ROOM",
+        "start_time": "<t>",
+        "end_time": "<t+1h>"
+      },
+      "expected_status": 201,
+      "expected_response_shape": {
+        "reference_code": "CW-\\d{6}"
+      },
+      "expected_behavior": "reference_code matches CW-###### pattern",
+      "failure_signal": "malformed code",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-BOOK-422",
+      "title": "Missing booking field -> 422",
+      "category": "validation",
+      "rule": 2,
+      "endpoint": "POST /bookings",
+      "critical": false,
+      "setup": "",
+      "method": "POST",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": {
+        "room_id": "$ROOM"
+      },
+      "expected_status": 422,
+      "expected_response_shape": {
+        "detail": "list"
+      },
+      "expected_behavior": "Missing room_id/time triggers 422",
+      "failure_signal": "non-422",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-LIST-ORDER",
+      "title": "List ascending by start_time",
+      "category": "listing",
+      "rule": 11,
+      "endpoint": "GET /bookings",
+      "critical": true,
+      "setup": ">=2 bookings",
+      "method": "GET",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "items": "ascending start_time"
+      },
+      "expected_behavior": "Sorted asc start_time, ties asc id",
+      "failure_signal": "descending",
+      "notes": "",
+      "status": "untested",
+      "bug": "B5a"
+    },
+    {
+      "id": "T-LIST-TIES",
+      "title": "Equal start_time ties by ascending id",
+      "category": "listing",
+      "rule": 11,
+      "endpoint": "GET /bookings",
+      "critical": false,
+      "setup": "2 bookings same start_time",
+      "method": "GET",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "items": "tie -> asc id"
+      },
+      "expected_behavior": "Ties broken by ascending id",
+      "failure_signal": "tie order wrong",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-LIST-PAGE1",
+      "title": "Page 1 returns first slice",
+      "category": "listing",
+      "rule": 11,
+      "endpoint": "GET /bookings",
+      "critical": true,
+      "setup": ">=11 bookings",
+      "method": "GET",
+      "path": "/bookings?page=1&limit=10",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "items[0]": "first of ordering"
+      },
+      "expected_behavior": "page=1 -> items [0,10)",
+      "failure_signal": "skips first 10",
+      "notes": "",
+      "status": "untested",
+      "bug": "B5b"
+    },
+    {
+      "id": "T-LIST-PAGE2",
+      "title": "Sequential pages never skip/repeat",
+      "category": "listing",
+      "rule": 11,
+      "endpoint": "GET /bookings",
+      "critical": false,
+      "setup": ">=10 bookings",
+      "method": "SEQUENCE",
+      "path": "GET page1 then page2 (limit 5)",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "no_overlap_no_gap": true
+      },
+      "expected_behavior": "Page2 continues exactly after page1",
+      "failure_signal": "overlap or gap",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-LIST-LIMIT",
+      "title": "Limit honored",
+      "category": "listing",
+      "rule": 11,
+      "endpoint": "GET /bookings",
+      "critical": true,
+      "setup": ">=3 bookings",
+      "method": "GET",
+      "path": "/bookings?limit=2",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "items_len": 2
+      },
+      "expected_behavior": "Returns exactly limit items",
+      "failure_signal": "returns up to 10",
+      "notes": "",
+      "status": "untested",
+      "bug": "B5c"
+    },
+    {
+      "id": "T-LIST-LIMIT-MAX",
+      "title": "limit>100 -> 422",
+      "category": "listing",
+      "rule": 11,
+      "endpoint": "GET /bookings",
+      "critical": false,
+      "setup": "",
+      "method": "GET",
+      "path": "/bookings?limit=101",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 422,
+      "expected_response_shape": {
+        "detail": "list"
+      },
+      "expected_behavior": "limit max is 100",
+      "failure_signal": "200 with >100",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-LIST-TOTAL",
+      "title": "total is full unpaginated count",
+      "category": "listing",
+      "rule": 11,
+      "endpoint": "GET /bookings",
+      "critical": false,
+      "setup": "N bookings",
+      "method": "GET",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "total": "N"
+      },
+      "expected_behavior": "total equals caller's booking count",
+      "failure_signal": "wrong total",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-VIS-LIST-OWN",
+      "title": "List shows only caller's bookings",
+      "category": "authz",
+      "rule": 10,
+      "endpoint": "GET /bookings",
+      "critical": true,
+      "setup": "two members with bookings",
+      "method": "GET",
+      "path": "/bookings",
+      "headers": {
+        "Authorization": "Bearer $MEMBER"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "items": "only caller's"
+      },
+      "expected_behavior": "Member sees only own bookings",
+      "failure_signal": "other users' bookings present",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-DETAIL-STARTTIME",
+      "title": "Detail start_time is the booking start",
+      "category": "contract",
+      "rule": 10,
+      "endpoint": "GET /bookings/{id}",
+      "critical": true,
+      "setup": "one booking",
+      "method": "GET",
+      "path": "/bookings/$BID",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "start_time": "== booked start"
+      },
+      "expected_behavior": "Detail returns real start_time",
+      "failure_signal": "equals created_at",
+      "notes": "",
+      "status": "untested",
+      "bug": "B7"
+    },
+    {
+      "id": "T-DETAIL-REFUNDS",
+      "title": "Detail includes refunds array",
+      "category": "contract",
+      "rule": 6,
+      "endpoint": "GET /bookings/{id}",
+      "critical": false,
+      "setup": "cancelled booking",
+      "method": "GET",
+      "path": "/bookings/$BID",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "refunds": [
+          {
+            "amount_cents": "int",
+            "status": "str",
+            "processed_at": "str"
+          }
+        ]
+      },
+      "expected_behavior": "Cancelled booking detail lists refund entries",
+      "failure_signal": "missing/wrong shape",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-VIS-IDOR-GET",
+      "title": "Member cannot read another's booking -> 404",
+      "category": "authz",
+      "rule": 10,
+      "endpoint": "GET /bookings/{id}",
+      "critical": true,
+      "setup": "bob books; alice is member",
+      "method": "GET",
+      "path": "/bookings/$OTHER_BID",
+      "headers": {
+        "Authorization": "Bearer $ALICE"
+      },
+      "body": null,
+      "expected_status": 404,
+      "expected_response_shape": {
+        "code": "BOOKING_NOT_FOUND"
+      },
+      "expected_behavior": "Other member's booking id is 404",
+      "failure_signal": "200",
+      "notes": "",
+      "status": "untested",
+      "bug": "B6"
+    },
+    {
+      "id": "T-VIS-ADMIN-GET",
+      "title": "Admin can read any org booking",
+      "category": "authz",
+      "rule": 10,
+      "endpoint": "GET /bookings/{id}",
+      "critical": false,
+      "setup": "member booking exists",
+      "method": "GET",
+      "path": "/bookings/$MEMBER_BID",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {},
+      "expected_behavior": "Admin reads any booking in org",
+      "failure_signal": "404",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-TENANT-BOOKING",
+      "title": "Cross-org booking id -> 404",
+      "category": "tenancy",
+      "rule": 9,
+      "endpoint": "GET /bookings/{id}",
+      "critical": true,
+      "setup": "",
+      "method": "GET",
+      "path": "/bookings/$OTHER_ORG_BID",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 404,
+      "expected_response_shape": {
+        "code": "BOOKING_NOT_FOUND"
+      },
+      "expected_behavior": "Foreign-org booking non-existent",
+      "failure_signal": "200/leak",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-REFUND-100",
+      "title": ">=48h notice -> 100%",
+      "category": "refund",
+      "rule": 6,
+      "endpoint": "POST /bookings/{id}/cancel",
+      "critical": false,
+      "setup": "booking start now+50h",
+      "method": "POST",
+      "path": "/bookings/$BID/cancel",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "refund_percent": 100
+      },
+      "expected_behavior": "Full refund for >=48h notice",
+      "failure_signal": "other",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-REFUND-48",
+      "title": "Exactly 48h notice -> 100%",
+      "category": "refund",
+      "rule": 6,
+      "endpoint": "POST /bookings/{id}/cancel",
+      "critical": true,
+      "setup": "booking start now+48h",
+      "method": "POST",
+      "path": "/bookings/$BID/cancel",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "refund_percent": 100
+      },
+      "expected_behavior": "48h boundary inclusive for 100%",
+      "failure_signal": "50",
+      "notes": "",
+      "status": "untested",
+      "bug": "B8a"
+    },
+    {
+      "id": "T-REFUND-50",
+      "title": "24-48h notice -> 50%",
+      "category": "refund",
+      "rule": 6,
+      "endpoint": "POST /bookings/{id}/cancel",
+      "critical": false,
+      "setup": "booking start now+30h",
+      "method": "POST",
+      "path": "/bookings/$BID/cancel",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "refund_percent": 50
+      },
+      "expected_behavior": "Half refund in [24,48)",
+      "failure_signal": "other",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-REFUND-24",
+      "title": "Exactly 24h notice -> 50%",
+      "category": "refund",
+      "rule": 6,
+      "endpoint": "POST /bookings/{id}/cancel",
+      "critical": false,
+      "setup": "booking start now+24h",
+      "method": "POST",
+      "path": "/bookings/$BID/cancel",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "refund_percent": 50
+      },
+      "expected_behavior": "24h boundary inclusive for 50%",
+      "failure_signal": "0",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-REFUND-0",
+      "title": "<24h notice -> 0%",
+      "category": "refund",
+      "rule": 6,
+      "endpoint": "POST /bookings/{id}/cancel",
+      "critical": true,
+      "setup": "booking start now+1h",
+      "method": "POST",
+      "path": "/bookings/$BID/cancel",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "refund_percent": 0
+      },
+      "expected_behavior": "No refund under 24h",
+      "failure_signal": "50",
+      "notes": "",
+      "status": "untested",
+      "bug": "B8b"
+    },
+    {
+      "id": "T-REFUND-ROUND",
+      "title": "Half-cent rounds up",
+      "category": "refund",
+      "rule": 6,
+      "endpoint": "POST /bookings/{id}/cancel",
+      "critical": true,
+      "setup": "price 1001, 50% tier",
+      "method": "POST",
+      "path": "/bookings/$BID/cancel",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "refund_amount_cents": 501
+      },
+      "expected_behavior": "50% of 1001 = 501 (half up)",
+      "failure_signal": "500",
+      "notes": "",
+      "status": "untested",
+      "bug": "B9"
+    },
+    {
+      "id": "T-REFUND-CONSISTENT",
+      "title": "Response amount == RefundLog amount",
+      "category": "refund",
+      "rule": 6,
+      "endpoint": "POST /bookings/{id}/cancel",
+      "critical": true,
+      "setup": "any cancel",
+      "method": "COMPARE",
+      "path": "cancel.refund_amount_cents vs detail.refunds[0].amount_cents",
+      "headers": {},
+      "body": null,
+      "expected_status": null,
+      "expected_response_shape": {
+        "equal": true
+      },
+      "expected_behavior": "Returned refund equals stored RefundLog",
+      "failure_signal": "differ",
+      "notes": "",
+      "status": "untested",
+      "bug": "B9"
+    },
+    {
+      "id": "T-CANCEL-ONE-REFUNDLOG",
+      "title": "Exactly one RefundLog per cancel",
+      "category": "refund",
+      "rule": 6,
+      "endpoint": "POST /bookings/{id}/cancel",
+      "critical": false,
+      "setup": "confirmed booking",
+      "method": "SEQUENCE",
+      "path": "cancel then GET detail",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "refunds_len": 1
+      },
+      "expected_behavior": "A cancelled booking has exactly one RefundLog",
+      "failure_signal": "0 or >1",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-CANCEL-DUP",
+      "title": "Re-cancel -> 409",
+      "category": "refund",
+      "rule": 6,
+      "endpoint": "POST /bookings/{id}/cancel",
+      "critical": true,
+      "setup": "cancelled booking",
+      "method": "POST",
+      "path": "/bookings/$BID/cancel",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 409,
+      "expected_response_shape": {
+        "code": "ALREADY_CANCELLED"
+      },
+      "expected_behavior": "Cancelling twice rejected",
+      "failure_signal": "other",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-CANCEL-AUTH",
+      "title": "Non-owner member cannot cancel -> 404",
+      "category": "authz",
+      "rule": 10,
+      "endpoint": "POST /bookings/{id}/cancel",
+      "critical": true,
+      "setup": "bob books; alice member",
+      "method": "POST",
+      "path": "/bookings/$OTHER_BID/cancel",
+      "headers": {
+        "Authorization": "Bearer $ALICE"
+      },
+      "body": null,
+      "expected_status": 404,
+      "expected_response_shape": {
+        "code": "BOOKING_NOT_FOUND"
+      },
+      "expected_behavior": "Only owner or org admin may cancel",
+      "failure_signal": "200",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-CANCEL-ADMIN",
+      "title": "Admin can cancel any org booking",
+      "category": "refund",
+      "rule": 6,
+      "endpoint": "POST /bookings/{id}/cancel",
+      "critical": false,
+      "setup": "member booking",
+      "method": "POST",
+      "path": "/bookings/$MEMBER_BID/cancel",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "status": "cancelled"
+      },
+      "expected_behavior": "Admin cancels member's booking",
+      "failure_signal": "404",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-CANCEL-CONC",
+      "title": "Concurrent cancel -> single refund",
+      "category": "concurrency",
+      "rule": 6,
+      "endpoint": "POST /bookings/{id}/cancel",
+      "critical": true,
+      "setup": "confirmed booking",
+      "method": "CONCURRENT",
+      "path": "2x concurrent cancel same booking",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": null,
+      "expected_response_shape": {
+        "refundlog_count": 1,
+        "one_success": true
+      },
+      "expected_behavior": "Only one cancel succeeds; exactly one RefundLog",
+      "failure_signal": "double refund/log",
+      "notes": "",
+      "status": "untested",
+      "bug": "B-CONC"
+    },
+    {
+      "id": "T-REPORT",
+      "title": "Per-room usage report",
+      "category": "admin",
+      "rule": 12,
+      "endpoint": "GET /admin/usage-report",
+      "critical": false,
+      "setup": "bookings in range",
+      "method": "GET",
+      "path": "/admin/usage-report?from=$F&to=$T",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "from": "str",
+        "to": "str",
+        "rooms": [
+          {
+            "room_id": "int",
+            "room_name": "str",
+            "confirmed_bookings": "int",
+            "revenue_cents": "int"
+          }
+        ]
+      },
+      "expected_behavior": "Counts+revenue of confirmed bookings in [from,to]",
+      "failure_signal": "wrong sums",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-REPORT-ZERO-ROOMS",
+      "title": "Rooms with zero bookings included",
+      "category": "admin",
+      "rule": 12,
+      "endpoint": "GET /admin/usage-report",
+      "critical": true,
+      "setup": "",
+      "method": "GET",
+      "path": "/admin/usage-report?from=$F&to=$T",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "includes_zero_rooms": true
+      },
+      "expected_behavior": "Every org room appears even with 0 bookings",
+      "failure_signal": "zero-rooms omitted",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-REPORT-EXCL-CANCEL",
+      "title": "Cancelled excluded from report",
+      "category": "admin",
+      "rule": 12,
+      "endpoint": "GET /admin/usage-report",
+      "critical": false,
+      "setup": "cancelled booking",
+      "method": "GET",
+      "path": "/admin/usage-report?from=$F&to=$T",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "excludes_cancelled": true
+      },
+      "expected_behavior": "Only confirmed counted",
+      "failure_signal": "cancelled counted",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-REPORT-RANGE",
+      "title": "Date range inclusive [from,to] UTC",
+      "category": "admin",
+      "rule": 12,
+      "endpoint": "GET /admin/usage-report",
+      "critical": false,
+      "setup": "",
+      "method": "GET",
+      "path": "/admin/usage-report?from=$F&to=$T",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "boundary_dates_included": true
+      },
+      "expected_behavior": "Bookings on from and to dates included",
+      "failure_signal": "boundary excluded",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-REPORT-STALE",
+      "title": "Report reflects new booking immediately",
+      "category": "admin",
+      "rule": 12,
+      "endpoint": "GET /admin/usage-report",
+      "critical": true,
+      "setup": "",
+      "method": "SEQUENCE",
+      "path": "GET report, create booking, GET report",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "reflects_new_booking": true
+      },
+      "expected_behavior": "Report is not stale after create",
+      "failure_signal": "unchanged (stale cache)",
+      "notes": "",
+      "status": "untested",
+      "bug": "AD1"
+    },
+    {
+      "id": "T-REPORT-ADMIN-ONLY",
+      "title": "Member cannot access report -> 403",
+      "category": "authz",
+      "rule": 12,
+      "endpoint": "GET /admin/usage-report",
+      "critical": true,
+      "setup": "",
+      "method": "GET",
+      "path": "/admin/usage-report?from=$F&to=$T",
+      "headers": {
+        "Authorization": "Bearer $MEMBER"
+      },
+      "body": null,
+      "expected_status": 403,
+      "expected_response_shape": {
+        "code": "FORBIDDEN"
+      },
+      "expected_behavior": "Admin-only endpoint",
+      "failure_signal": "200",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-TENANT-REPORT",
+      "title": "Report only covers own org",
+      "category": "tenancy",
+      "rule": 9,
+      "endpoint": "GET /admin/usage-report",
+      "critical": false,
+      "setup": "",
+      "method": "GET",
+      "path": "/admin/usage-report?from=$F&to=$T",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "only_own_org_rooms": true
+      },
+      "expected_behavior": "No foreign-org rooms in report",
+      "failure_signal": "foreign rooms present",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-EXPORT-HEADER",
+      "title": "CSV header exact",
+      "category": "admin",
+      "rule": 6,
+      "endpoint": "GET /admin/export",
+      "critical": true,
+      "setup": "",
+      "method": "GET",
+      "path": "/admin/export",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "header": "id,reference_code,room_id,user_id,start_time,end_time,status,price_cents"
+      },
+      "expected_behavior": "Exact CSV header order",
+      "failure_signal": "wrong header",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-EXPORT-CROSSORG",
+      "title": "Export cannot leak other org",
+      "category": "security",
+      "rule": 9,
+      "endpoint": "GET /admin/export",
+      "critical": true,
+      "setup": "two orgs",
+      "method": "GET",
+      "path": "/admin/export?include_all=true&room_id=$OTHER_ORG_ROOM",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": 404,
+      "expected_response_shape": {
+        "code": "ROOM_NOT_FOUND"
+      },
+      "expected_behavior": "Foreign-org room export blocked; no rows leak",
+      "failure_signal": "org2 rows returned",
+      "notes": "",
+      "status": "untested",
+      "bug": "EX1"
+    },
+    {
+      "id": "T-EXPORT-ADMIN-ONLY",
+      "title": "Member cannot export -> 403",
+      "category": "authz",
+      "rule": 9,
+      "endpoint": "GET /admin/export",
+      "critical": true,
+      "setup": "",
+      "method": "GET",
+      "path": "/admin/export",
+      "headers": {
+        "Authorization": "Bearer $MEMBER"
+      },
+      "body": null,
+      "expected_status": 403,
+      "expected_response_shape": {
+        "code": "FORBIDDEN"
+      },
+      "expected_behavior": "Admin-only endpoint",
+      "failure_signal": "200",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-HEALTH",
+      "title": "Health endpoint ok",
+      "category": "smoke",
+      "rule": 16,
+      "endpoint": "GET /health",
+      "critical": false,
+      "setup": "",
+      "method": "GET",
+      "path": "/health",
+      "headers": {},
+      "body": null,
+      "expected_status": 200,
+      "expected_response_shape": {
+        "status": "ok"
+      },
+      "expected_behavior": "Liveness returns {status: ok}",
+      "failure_signal": "non-200/wrong body",
+      "notes": "",
+      "status": "untested"
+    },
+    {
+      "id": "T-LIVENESS-DEADLOCK",
+      "title": "No hang on concurrent create+cancel",
+      "category": "concurrency",
+      "rule": 16,
+      "endpoint": "POST /bookings",
+      "critical": true,
+      "setup": "booking exists",
+      "method": "CONCURRENT",
+      "path": "concurrent create + cancel",
+      "headers": {
+        "Authorization": "Bearer $ADMIN"
+      },
+      "body": null,
+      "expected_status": null,
+      "expected_response_shape": {
+        "both_return": true
+      },
+      "expected_behavior": "No lock-order deadlock; prompt responses",
+      "failure_signal": "request hangs/timeout",
+      "notes": "",
+      "status": "untested",
+      "bug": "N1"
+    }
   ]
 }
