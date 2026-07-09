@@ -1,0 +1,621 @@
+CoWork Booking API - Critical Manual Endpoint Tests
+===================================================
+
+Source files read: HANDOFF_FOR_CODEX.md, README.md, bug_report.md, BUG_LEDGER.md, TESTCASES.md, TESTCASES.json, HACKATHON_STATE.md.
+No application code changes are needed for these tests.
+
+How to run manually in Chrome
+-----------------------------
+1. Start Docker, then open: http://localhost:8000/docs
+2. Use Swagger "Try it out" for POST/GET requests.
+3. For protected endpoints, click "Authorize" and enter: Bearer <access_token>
+4. Use a unique run suffix to avoid old persisted data:
+   RUN = any short value, e.g. 20260709a
+   ORG_A = codex-acme-RUN
+   ORG_B = codex-other-RUN
+5. Capture these values as you test:
+   ADMIN_A_ACCESS, ADMIN_A_REFRESH, MEMBER_A_ACCESS, MEMBER_B_ACCESS,
+   ROOM_A_ID, ROOM_B_ID, BOOKING_A_ID, MEMBER_BOOKING_ID
+
+Common expected error shape
+---------------------------
+Application errors should be JSON:
+  {"detail": "<message>", "code": "<CODE>"}
+
+FastAPI request validation errors return HTTP 422 with the default "detail" array.
+Missing, invalid, expired, blacklisted, or wrong-type tokens should return HTTP 401.
+
+Setup: create users and rooms
+-----------------------------
+
+S1. POST /auth/register - first user in a new org becomes admin
+Body:
+  {"org_name":"ORG_A","username":"admin","password":"pw12345"}
+Expected:
+  HTTP 201
+  JSON has user_id:int, org_id:int, username:"admin", role:"admin"
+
+S2. POST /auth/login - admin login
+Body:
+  {"org_name":"ORG_A","username":"admin","password":"pw12345"}
+Expected:
+  HTTP 200
+  JSON has access_token:str, refresh_token:str, token_type:"bearer"
+Save access_token as ADMIN_A_ACCESS and refresh_token as ADMIN_A_REFRESH.
+
+S3. POST /auth/register - second user in same org becomes member
+Body:
+  {"org_name":"ORG_A","username":"bob","password":"pw12345"}
+Expected:
+  HTTP 201
+  JSON has role:"member"
+
+S4. POST /auth/login - member login
+Body:
+  {"org_name":"ORG_A","username":"bob","password":"pw12345"}
+Expected:
+  HTTP 200
+Save access_token as MEMBER_A_ACCESS.
+
+S5. POST /auth/register and /auth/login - second org
+Register:
+  {"org_name":"ORG_B","username":"otheradmin","password":"pw12345"}
+Login with the same body.
+Expected:
+  Register HTTP 201 role:"admin"; login HTTP 200.
+Save access_token as ADMIN_B_ACCESS.
+
+S6. POST /rooms - create room in ORG_A as admin
+Authorize with ADMIN_A_ACCESS.
+Body:
+  {"name":"Focus Room","capacity":4,"hourly_rate_cents":1000}
+Expected:
+  HTTP 201
+  JSON has id:int, org_id:int, name:"Focus Room", capacity:4, hourly_rate_cents:1000
+Save id as ROOM_A_ID.
+
+S7. POST /rooms - create room in ORG_B as admin
+Authorize with ADMIN_B_ACCESS.
+Body:
+  {"name":"Other Room","capacity":2,"hourly_rate_cents":500}
+Expected:
+  HTTP 201
+Save id as ROOM_B_ID.
+
+
+Endpoint Tests
+==============
+
+1. GET /health
+--------------
+
+T-HEALTH
+Request:
+  GET /health
+Expected:
+  HTTP 200
+  {"status":"ok"}
+
+
+2. POST /auth/register
+----------------------
+
+T-REG-DUP - duplicate username is rejected
+Body:
+  {"org_name":"ORG_A","username":"bob","password":"pw12345"}
+Expected:
+  HTTP 409
+  JSON has code:"USERNAME_TAKEN"
+
+T-REG-422 - malformed register body
+Body:
+  {"org_name":"ORG_A","username":"missing_password"}
+Expected:
+  HTTP 422
+  JSON has detail array
+
+
+3. POST /auth/login
+-------------------
+
+T-LOGIN-BAD - wrong password is rejected
+Body:
+  {"org_name":"ORG_A","username":"admin","password":"wrong"}
+Expected:
+  HTTP 401
+  JSON has code:"INVALID_CREDENTIALS"
+
+T-LOGIN-UNKNOWN-ORG - unknown org is rejected
+Body:
+  {"org_name":"does-not-exist-RUN","username":"admin","password":"pw12345"}
+Expected:
+  HTTP 401
+  JSON has code:"INVALID_CREDENTIALS"
+
+T-JWT-CLAIMS - access token contents
+Action:
+  Copy ADMIN_A_ACCESS into jwt.io or another local JWT decoder.
+Expected decoded payload includes:
+  sub: string
+  org: integer
+  role: "admin"
+  jti: string
+  iat: integer
+  exp: integer
+  type: "access"
+  exp - iat = 900
+
+
+4. POST /auth/refresh
+---------------------
+
+T-AUTH-REFRESH-ROTATE - refresh token rotates
+Body:
+  {"refresh_token":"ADMIN_A_REFRESH"}
+Expected:
+  HTTP 200
+  JSON has access_token:str, refresh_token:str, token_type:"bearer"
+  New refresh_token is different from ADMIN_A_REFRESH.
+Save old refresh as OLD_REFRESH and new refresh as NEW_REFRESH.
+
+T-AUTH-REFRESH-REUSE - old refresh token is single-use
+Body:
+  {"refresh_token":"OLD_REFRESH"}
+Expected:
+  HTTP 401
+
+T-AUTH-REFRESH-WRONGTYPE - access token cannot be used as refresh token
+Body:
+  {"refresh_token":"ADMIN_A_ACCESS"}
+Expected:
+  HTTP 401
+
+
+5. POST /auth/logout
+--------------------
+
+T-AUTH-LOGOUT - logout invalidates presented access token
+Action:
+  Login again as admin to get TEMP_ACCESS.
+  Authorize with TEMP_ACCESS.
+  POST /auth/logout
+Expected logout response:
+  HTTP 200
+
+Then:
+  Authorize with the same TEMP_ACCESS.
+  GET /rooms
+Expected:
+  HTTP 401
+
+T-LOGOUT-NOAUTH
+Action:
+  Clear Authorization in Swagger.
+  POST /auth/logout
+Expected:
+  HTTP 401
+
+
+6. GET /rooms
+-------------
+
+T-AUTH-MISSING - protected route requires token
+Action:
+  Clear Authorization in Swagger.
+  GET /rooms
+Expected:
+  HTTP 401
+
+T-ROOMS-LIST - admin sees own org rooms
+Action:
+  Authorize with ADMIN_A_ACCESS.
+  GET /rooms
+Expected:
+  HTTP 200
+  JSON is a list/array containing ROOM_A_ID.
+
+T-ROOMS-LIST-TENANT - room list is org-scoped
+Action:
+  Authorize with ADMIN_A_ACCESS.
+  GET /rooms
+Expected:
+  HTTP 200
+  Response must NOT contain ROOM_B_ID.
+
+
+7. POST /rooms
+--------------
+
+T-ROOM-CREATE-FORBIDDEN - member cannot create room
+Authorize with MEMBER_A_ACCESS.
+Body:
+  {"name":"Member Room","capacity":2,"hourly_rate_cents":500}
+Expected:
+  HTTP 403
+  JSON has code:"FORBIDDEN"
+
+T-ROOM-CREATE-VALIDATION - invalid room body
+Authorize with ADMIN_A_ACCESS.
+Body:
+  {"name":"Bad Room","capacity":0,"hourly_rate_cents":1000}
+Expected:
+  HTTP 422 or HTTP 400 depending validation path.
+  It must not create a usable room.
+
+
+8. POST /bookings
+-----------------
+
+Use ROOM_A_ID. Dates below are future relative to 2026-07-09.
+If you test after these dates, replace them with future UTC datetimes.
+
+T-PRICE - price = hourly_rate_cents x whole hours
+Authorize with MEMBER_A_ACCESS.
+Body:
+  {"room_id":ROOM_A_ID,"start_time":"2026-12-01T09:00:00Z","end_time":"2026-12-01T11:00:00Z"}
+Expected:
+  HTTP 201
+  JSON has status:"confirmed", price_cents:2000
+Save id as MEMBER_BOOKING_ID.
+
+T-TZ-OFFSET - offset input converted to UTC
+Body:
+  {"room_id":ROOM_A_ID,"start_time":"2026-12-02T12:00:00+06:00","end_time":"2026-12-02T13:00:00+06:00"}
+Expected:
+  HTTP 201
+  start_time is "2026-12-02T06:00:00Z" or "2026-12-02T06:00:00+00:00"
+  end_time is "2026-12-02T07:00:00Z" or "2026-12-02T07:00:00+00:00"
+
+T-WIN-ZERO - zero duration rejected
+Body:
+  {"room_id":ROOM_A_ID,"start_time":"2026-12-03T09:00:00Z","end_time":"2026-12-03T09:00:00Z"}
+Expected:
+  HTTP 400
+  JSON has code:"INVALID_BOOKING_WINDOW"
+
+T-WIN-NEG - negative duration rejected
+Body:
+  {"room_id":ROOM_A_ID,"start_time":"2026-12-03T10:00:00Z","end_time":"2026-12-03T09:00:00Z"}
+Expected:
+  HTTP 400
+  JSON has code:"INVALID_BOOKING_WINDOW"
+
+T-WIN-9H - duration over 8h rejected
+Body:
+  {"room_id":ROOM_A_ID,"start_time":"2026-12-03T09:00:00Z","end_time":"2026-12-03T18:00:00Z"}
+Expected:
+  HTTP 400
+  JSON has code:"INVALID_BOOKING_WINDOW"
+
+T-WIN-HALF - non-whole-hour duration rejected
+Body:
+  {"room_id":ROOM_A_ID,"start_time":"2026-12-03T09:00:00Z","end_time":"2026-12-03T10:30:00Z"}
+Expected:
+  HTTP 400
+  JSON has code:"INVALID_BOOKING_WINDOW"
+
+T-WIN-PAST - past start rejected with no grace
+Body:
+  {"room_id":ROOM_A_ID,"start_time":"2026-01-01T09:00:00Z","end_time":"2026-01-01T10:00:00Z"}
+Expected:
+  HTTP 400
+  JSON has code:"INVALID_BOOKING_WINDOW"
+
+T-CONF-OVERLAP - overlapping booking rejected
+Precondition:
+  MEMBER_BOOKING_ID exists for 2026-12-01T09:00:00Z to 11:00:00Z.
+Body:
+  {"room_id":ROOM_A_ID,"start_time":"2026-12-01T10:00:00Z","end_time":"2026-12-01T12:00:00Z"}
+Expected:
+  HTTP 409
+  JSON has code:"ROOM_CONFLICT"
+
+T-CONF-BACK2BACK - adjacent booking allowed
+Body:
+  {"room_id":ROOM_A_ID,"start_time":"2026-12-01T11:00:00Z","end_time":"2026-12-01T12:00:00Z"}
+Expected:
+  HTTP 201
+  status:"confirmed"
+
+T-BOOK-ROOM-NOTFOUND - foreign org room behaves as not found
+Authorize with MEMBER_A_ACCESS.
+Body:
+  {"room_id":ROOM_B_ID,"start_time":"2026-12-04T09:00:00Z","end_time":"2026-12-04T10:00:00Z"}
+Expected:
+  HTTP 404
+  JSON has code:"ROOM_NOT_FOUND"
+
+T-REF-FORMAT - booking reference code format
+Any successful booking response should include:
+  reference_code matching format CW-000001, CW-000002, etc.
+
+T-QUOTA - fourth booking in next 24h is rejected
+Action:
+  Create 3 confirmed bookings for MEMBER_A_ACCESS with start_time inside the next 24 hours from now, each in a different free slot.
+  Try a 4th booking also inside the next 24 hours.
+Expected for 4th booking:
+  HTTP 409
+  JSON has code:"QUOTA_EXCEEDED"
+
+T-CONF-CONC - no double booking under concurrent attempts
+Manual browser approximation:
+  Open two Swagger tabs, authorize both with the same token, prepare the same POST /bookings body for the same room/time, submit as close together as possible.
+Expected invariant:
+  Exactly one request returns HTTP 201.
+  The other returns HTTP 409 with code:"ROOM_CONFLICT".
+
+
+9. GET /bookings
+----------------
+
+T-LIST-ORDER - ascending by start_time
+Authorize with MEMBER_A_ACCESS.
+Request:
+  GET /bookings?page=1&limit=20
+Expected:
+  HTTP 200
+  JSON shape: {"items":[...],"page":1,"limit":20,"total":int}
+  items are sorted by start_time ascending; ties by id ascending.
+
+T-LIST-LIMIT - limit is honored
+Request:
+  GET /bookings?page=1&limit=2
+Expected:
+  HTTP 200
+  JSON has limit:2
+  items length is <= 2
+
+T-VIS-LIST-OWN - member sees only own bookings
+Action:
+  Create at least one booking as admin or another member in ORG_A.
+  Authorize with MEMBER_A_ACCESS.
+  GET /bookings
+Expected:
+  HTTP 200
+  Every item has user_id equal to bob's user_id.
+  No other user's booking appears.
+
+
+10. GET /bookings/{id}
+----------------------
+
+T-DETAIL-STARTTIME - detail uses real booking start_time
+Authorize with MEMBER_A_ACCESS.
+Request:
+  GET /bookings/MEMBER_BOOKING_ID
+Expected:
+  HTTP 200
+  start_time equals the original booked start_time, not created_at.
+  Response includes refunds array.
+
+T-VIS-IDOR-GET - member cannot read another user's booking
+Action:
+  Use a booking id owned by admin/another member in ORG_A.
+  Authorize with MEMBER_A_ACCESS.
+  GET /bookings/{other_user_booking_id}
+Expected:
+  HTTP 404
+  JSON has code:"BOOKING_NOT_FOUND"
+
+T-TENANT-BOOKING - cross-org booking is hidden
+Action:
+  Create a booking in ORG_B.
+  Authorize with MEMBER_A_ACCESS or ADMIN_A_ACCESS.
+  GET /bookings/{org_b_booking_id}
+Expected:
+  HTTP 404
+  JSON has code:"BOOKING_NOT_FOUND"
+
+
+11. POST /bookings/{id}/cancel
+------------------------------
+
+T-REFUND-100 - more than 48h notice gives full refund
+Precondition:
+  Create a future booking more than 48h from now at price_cents 2000.
+Request:
+  POST /bookings/{id}/cancel
+Expected:
+  HTTP 200
+  JSON has id:int, status:"cancelled", refund_percent:100, refund_amount_cents:2000
+
+T-REFUND-0 - under 24h notice gives no refund
+Precondition:
+  Create a booking that starts less than 24h from now.
+Request:
+  POST /bookings/{id}/cancel
+Expected:
+  HTTP 200
+  refund_percent:0
+  refund_amount_cents:0
+
+T-CANCEL-DUP - cancelling twice is rejected
+Request:
+  POST /bookings/{already_cancelled_id}/cancel
+Expected:
+  HTTP 409
+  JSON has code:"ALREADY_CANCELLED"
+
+T-CANCEL-AUTH - non-owner member cannot cancel
+Action:
+  Create booking as admin/another member.
+  Authorize with MEMBER_A_ACCESS.
+  POST /bookings/{other_user_booking_id}/cancel
+Expected:
+  HTTP 404
+  JSON has code:"BOOKING_NOT_FOUND"
+
+T-CANCEL-ADMIN - org admin can cancel org member booking
+Action:
+  Create booking as MEMBER_A_ACCESS.
+  Authorize with ADMIN_A_ACCESS.
+  POST /bookings/{member_booking_id}/cancel
+Expected:
+  HTTP 200
+  status:"cancelled"
+
+T-CANCEL-CONC - concurrent cancel creates only one refund
+Manual browser approximation:
+  Open two tabs with POST /bookings/{same_id}/cancel and submit near-simultaneously.
+Expected invariant:
+  One request succeeds with HTTP 200.
+  The other returns HTTP 409 code:"ALREADY_CANCELLED".
+  GET /bookings/{id} shows only one refund entry.
+
+
+12. GET /rooms/{id}/availability
+--------------------------------
+
+T-AVAIL - busy intervals include confirmed bookings for date
+Authorize with ADMIN_A_ACCESS or MEMBER_A_ACCESS.
+Request:
+  GET /rooms/ROOM_A_ID/availability?date=2026-12-01
+Expected:
+  HTTP 200
+  JSON shape: {"room_id":ROOM_A_ID,"date":"2026-12-01","busy":[...]}
+  busy contains confirmed booking intervals on that date.
+
+T-AVAIL-STALE - cancellation is reflected immediately
+Action:
+  Create a booking for 2026-12-05T09:00:00Z to 10:00:00Z.
+  Confirm it appears in availability for date=2026-12-05.
+  Cancel it.
+  Re-check availability.
+Expected:
+  HTTP 200
+  Cancelled booking interval is no longer in busy.
+
+T-TENANT-ROOM - cross-org room hidden
+Authorize with ADMIN_A_ACCESS.
+Request:
+  GET /rooms/ROOM_B_ID/availability?date=2026-12-01
+Expected:
+  HTTP 404
+  JSON has code:"ROOM_NOT_FOUND"
+
+
+13. GET /rooms/{id}/stats
+-------------------------
+
+T-STATS-DERIVED - stats reflect confirmed bookings only
+Authorize with ADMIN_A_ACCESS.
+Request:
+  GET /rooms/ROOM_A_ID/stats
+Expected:
+  HTTP 200
+  JSON shape:
+    {"room_id":ROOM_A_ID,"total_confirmed_bookings":int,"total_revenue_cents":int}
+  total_confirmed_bookings equals current confirmed bookings for ROOM_A_ID.
+  total_revenue_cents equals sum of price_cents for confirmed bookings only.
+
+T-STATS-AFTER-CANCEL - cancellation updates stats
+Action:
+  Capture stats.
+  Create a booking.
+  Check stats increased.
+  Cancel that booking.
+  Check stats returns to previous values.
+Expected:
+  HTTP 200 each time; no stale cached count/revenue.
+
+T-TENANT-STATS - cross-org room stats hidden
+Authorize with ADMIN_A_ACCESS.
+Request:
+  GET /rooms/ROOM_B_ID/stats
+Expected:
+  HTTP 404
+  JSON has code:"ROOM_NOT_FOUND"
+
+
+14. GET /admin/usage-report
+---------------------------
+
+T-REPORT - admin report shape
+Authorize with ADMIN_A_ACCESS.
+Request:
+  GET /admin/usage-report?from=2026-12-01&to=2026-12-31
+Expected:
+  HTTP 200
+  JSON shape:
+    {"from":"2026-12-01","to":"2026-12-31","rooms":[...]}
+  Each room item has room_id, room_name, confirmed_bookings, revenue_cents.
+
+T-REPORT-ZERO-ROOMS - rooms with zero bookings are included
+Expected:
+  HTTP 200
+  Rooms in ORG_A with no confirmed bookings in the range still appear with confirmed_bookings:0 and revenue_cents:0.
+
+T-REPORT-EXCL-CANCEL - cancelled bookings excluded
+Action:
+  Create and cancel a booking inside the report range.
+  Re-run report.
+Expected:
+  Cancelled booking does not count in confirmed_bookings or revenue_cents.
+
+T-REPORT-ADMIN-ONLY - member cannot access report
+Authorize with MEMBER_A_ACCESS.
+Request:
+  GET /admin/usage-report?from=2026-12-01&to=2026-12-31
+Expected:
+  HTTP 403
+  JSON has code:"FORBIDDEN"
+
+T-TENANT-REPORT - org-scoped report
+Authorize with ADMIN_A_ACCESS.
+Request:
+  GET /admin/usage-report?from=2026-12-01&to=2026-12-31
+Expected:
+  HTTP 200
+  rooms contains only ORG_A rooms.
+  It must not contain ROOM_B_ID.
+
+
+15. GET /admin/export
+---------------------
+
+T-EXPORT-HEADER - exact CSV header
+Authorize with ADMIN_A_ACCESS.
+Request:
+  GET /admin/export?include_all=true
+Expected:
+  HTTP 200
+  Content is CSV.
+  First line exactly:
+    id,reference_code,room_id,user_id,start_time,end_time,status,price_cents
+
+T-EXPORT-CROSSORG - cannot export another org's room
+Authorize with ADMIN_A_ACCESS.
+Request:
+  GET /admin/export?room_id=ROOM_B_ID&include_all=true
+Expected:
+  HTTP 404
+  JSON has code:"ROOM_NOT_FOUND"
+  No CSV rows from ORG_B are returned.
+
+T-EXPORT-ADMIN-ONLY - member cannot export
+Authorize with MEMBER_A_ACCESS.
+Request:
+  GET /admin/export?include_all=true
+Expected:
+  HTTP 403
+  JSON has code:"FORBIDDEN"
+
+
+High-value final sanity sequence
+--------------------------------
+Run these in this order if time is short:
+1. GET /health -> 200 {"status":"ok"}
+2. Register admin/member and login both -> expected roles/tokens.
+3. Duplicate register bob -> 409 USERNAME_TAKEN.
+4. Member POST /rooms -> 403 FORBIDDEN.
+5. Admin create room -> 201; member create 2h booking -> 201 price_cents 2000.
+6. Overlap same room/time -> 409 ROOM_CONFLICT.
+7. Back-to-back booking -> 201.
+8. Offset datetime +06:00 -> stored/echoed in UTC.
+9. Zero/negative/past booking windows -> 400 INVALID_BOOKING_WINDOW.
+10. Member GET /bookings only sees own bookings.
+11. Other member/admin booking detail as bob -> 404 BOOKING_NOT_FOUND.
+12. Cancel >48h booking -> 100% refund; re-cancel -> 409 ALREADY_CANCELLED.
+13. Availability removes cancelled booking immediately.
+14. Stats/report update after create/cancel and exclude cancelled bookings.
+15. Export header is exact and cross-org room export returns 404 ROOM_NOT_FOUND.
