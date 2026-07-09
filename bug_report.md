@@ -37,6 +37,7 @@ passes after the fix. Grading is black-box; every fix preserves the API contract
 | A4 | 15 | Duplicate username returns 200 | High | test_register_duplicate_username_409 | FIXED |
 | N1 | 16 | Notification lock-ordering deadlock | Critical | test_no_deadlock_on_concurrent_create_and_cancel | FIXED |
 | H1 | 2 | Malformed datetime → HTTP 500 | Medium | test_malformed_datetime_returns_400 | FIXED (2nd pass) |
+| H2 | 15,16 | Concurrent registration race → HTTP 500 | Medium | test_concurrent_registration_same_new_org, test_concurrent_registration_same_username | FIXED (2nd pass) |
 
 ---
 
@@ -162,6 +163,8 @@ passes after the fix. Grading is black-box; every fix preserves the API contract
 - **Fix:** wrap the two `parse_input_datetime` calls in `try/except ValueError` → `AppError(400, "INVALID_BOOKING_WINDOW", …)`, consistent with the other date endpoints and the error contract.
 - **Proof:** `test_malformed_datetime_returns_400` (three malformed payloads → 400).
 
-## H2 — Concurrent same-new-org registration (Rules 15/16) — NOT fixed (documented)
-- **Observed:** two simultaneous `POST /auth/register` for the *same brand-new* org name can race the unique `Organization.name` constraint → one `IntegrityError` → 500.
-- **Decision:** left as-is. Low probability, not a listed rule violation, and a 500 is not a hang (Rule 16 is about hangs). A defensive fix (catch IntegrityError / serialize org creation) was judged higher-risk than the exposure. Tracked in `BUG_LEDGER.md` as SUSPECTED.
+## H2 — Concurrent registration race (Rules 15/16) — 2nd pass
+- **Affected:** `app/routers/auth.py` `register`
+- **Wrong:** the check-then-insert of the organization and the user was not atomic. Two simultaneous registrations for the *same brand-new* org name (or the *same* username in an org) both passed their `SELECT` checks, then one `INSERT` hit the unique constraint → unhandled `IntegrityError` → **HTTP 500**.
+- **Fix:** serialize the whole register body under a module-level `_register_lock` (same pattern as the booking locks). This makes the check-then-insert atomic and resolves to the correct Rule 15 outcome: the first creator of a new org becomes admin, everyone after joins as member, and a duplicate username returns `409 USERNAME_TAKEN` — never a 500.
+- **Proof:** `test_concurrent_registration_same_new_org` (8 concurrent → exactly one admin, seven members), `test_concurrent_registration_same_username` (concurrent dup → exactly one 201, rest 409, no 500).

@@ -16,6 +16,8 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 client = TestClient(app)
+# surfaces 500s as a status code instead of re-raising, so we can assert on them
+rc = TestClient(app, raise_server_exceptions=False)
 
 
 # ---------------------------------------------------------------- helpers
@@ -141,6 +143,36 @@ def test_no_deadlock_on_concurrent_create_and_cancel():  # T-LIVENESS-DEADLOCK (
     # if the notification lock-ordering deadlock regresses, result() times out
     results = run_parallel(fns, timeout=30)
     assert all(code in (200, 201) for code in results), results
+
+
+# ---------------------------------------------------------------- Rule 15/16
+def test_concurrent_registration_same_new_org():  # H2
+    """Many simultaneous registrations for the same brand-new org must not 500;
+    exactly one becomes admin (first to create the org), the rest join as member."""
+    org = "org-" + uuid.uuid4().hex[:12]
+
+    def reg(u):
+        r = rc.post("/auth/register", json={"org_name": org, "username": u, "password": "pw12345"})
+        return r.status_code, (r.json().get("role") if r.status_code == 201 else None)
+
+    results = run_parallel([(lambda i=i: reg(f"u{i}")) for i in range(8)])
+    assert all(s == 201 for s, _ in results), results          # no 500 / no spurious 409
+    roles = [role for _, role in results]
+    assert roles.count("admin") == 1, roles                    # exactly one admin
+    assert roles.count("member") == 7, roles
+
+
+def test_concurrent_registration_same_username():  # H2 (user-unique race)
+    org = "org-" + uuid.uuid4().hex[:12]
+    rc.post("/auth/register", json={"org_name": org, "username": "seed", "password": "pw12345"})  # org now exists
+
+    def reg():
+        return rc.post("/auth/register", json={"org_name": org, "username": "dup", "password": "pw12345"}).status_code
+
+    codes = run_parallel([(lambda: reg()) for _ in range(6)])
+    assert 500 not in codes, codes
+    assert codes.count(201) == 1, codes                        # exactly one created
+    assert all(c in (201, 409) for c in codes), codes          # rest are USERNAME_TAKEN
 
 
 # ---------------------------------------------------------------- Rule 14

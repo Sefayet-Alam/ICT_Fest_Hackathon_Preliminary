@@ -1,9 +1,10 @@
 # HACKATHON_STATE — CoWork Booking API
 
-**Current status:** All 24 planted bugs fixed and verified, plus 1 found in a
-second-pass bug-hunt (H1: malformed datetime → 500, now 400). Full suite green
-(**62 passed**). Live server smoke passes. `CLAUDE.md` added. Ready for final
-review / submission. Docker build not run here (daemon down) — verify before submit.
+**Current status:** All 24 planted bugs fixed and verified, plus 2 found in a
+second-pass bug-hunt (H1: malformed datetime → 500, now 400; H2: concurrent
+registration race → 500, now serialized). Full suite green (**64 passed**). Live
+server smoke passes. `CLAUDE.md` added. Ready for final review / submission.
+Docker build not run here (daemon down) — verify before submit.
 
 ## Challenge
 - Type: **Bug-fix / codebase-repair**, black-box graded. Fixes preserve the API contract exactly.
@@ -26,7 +27,7 @@ review / submission. Docker build not run here (daemon down) — verify before s
 ```bash
 source .venv/bin/activate
 pip install -r requirements.txt pytest
-pytest -q                      # 62 passed
+pytest -q                      # 64 passed
 ```
 - `tests/test_smoke.py` — original happy-path (kept).
 - `tests/test_spec.py` — 54 deterministic spec/reproduction cases (rules 1,2,3,4,6,8,9,10,11,12,13,14,15).
