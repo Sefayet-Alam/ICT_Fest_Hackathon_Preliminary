@@ -39,12 +39,26 @@ pytest -q                      # 64 passed
 - Spec suite pre-fix: **20 failures** (each a planted bug). Post-fix: **0 failures**.
 - Concurrency suite: rate-limit test verified to FAIL when the lock is removed, PASS with it.
 
-## Docker status
-- `Dockerfile` (python:3.11-slim), `docker-compose.yml`, `.dockerignore` present and sound.
-- **Not built here** (Docker daemon down). Verify:
+## Docker status — VERIFIED
+- `Dockerfile` (python:3.11-slim), `docker-compose.yml`, `.dockerignore` present.
+- `docker compose up --build` **built and ran successfully**; the container served on
+  `0.0.0.0:8000` and passed a live smoke: `/health` → `{"status":"ok"}`, register admin 201,
+  and an offset booking echoed `2027-05-01T06:00:00+00:00` (tz→UTC) with `price_cents=1000`.
   ```bash
-  docker compose up --build      # then hit http://localhost:8000/health
+  docker compose up --build              # http://localhost:8000
+  BASE_URL=http://localhost:8000 ./scripts/smoke_test.sh
+  docker compose down -v                 # clean teardown
   ```
+
+## Environment variables
+- `JWT_SECRET` — HS256 signing secret (default `cowork-dev-secret-change-me`; compose sets its own).
+- `DATABASE_URL` — SQLAlchemy URL (default `sqlite:///./cowork.db`; compose uses a persisted volume).
+- Both have safe in-code defaults, so the app runs with no `.env`. See `.env.example`.
+
+## Smoke test
+- `scripts/smoke_test.sh` (python3 stdlib only — no curl/jq) hits a running server and checks
+  health, auth, tz→UTC booking, malformed-datetime→400 (H1), and duplicate-username→409.
+  Verified green against both local uvicorn and the Docker container.
 
 ## Assumptions
 - README/PDF are authoritative and identical.
@@ -59,12 +73,13 @@ pytest -q                      # 64 passed
 - [x] Reproduction + regression tests (test_spec.py, test_concurrency.py) — 61 passed
 - [x] Live uvicorn smoke (health, JWT 900s, tz→UTC, booking)
 - [x] bug_report.md complete
-- [ ] `docker compose up --build` verified (needs daemon)
-- [ ] Final security re-check + submission (see SECURITY_CHECK.md)
+- [x] `docker compose up --build` verified (built, served, smoke passed)
+- [x] Reproducibility: `.env.example`, `.gitignore` (`.env*`), `scripts/smoke_test.sh`
+- [x] Independent `final-reviewer` pass — verdict READY (see "Final Review" section below)
+- [ ] Final security re-check + submission (see SECURITY_CHECK.md; decide on committed PDF)
 - [ ] draw.io diagrams (optional, after stability)
 
 ## Unresolved / known limitations
-- Docker build unverified locally (daemon down) — low risk (base image = local env).
 - Reference-code counter is in-memory (starts at 1000). Under a process restart that reuses a **persisted** DB volume, codes could repeat. Not an issue for a fresh grader container; a DB-seeded counter would remove even that edge case. No DB unique constraint was added to avoid restart-collision 500s.
 - The `app/services/stats.py` module is now unused (stats derive from the DB); left in place to keep the diff minimal.
 
