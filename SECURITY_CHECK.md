@@ -1,37 +1,41 @@
 # SECURITY_CHECK — CoWork Booking API
 
-**Verdict (current): SAFE TO PUBLISH** — no secrets or confidential files detected in the working tree. Re-run before final push.
+**Verdict: SAFE TO PUBLISH (secrets)** — no secrets, keys, `.env`, or DB files in
+the repo. **One decision for you:** the problem-statement PDF is committed (see below).
 
 ## Secret handling
-- No `.env` file present in the repo. No API keys, tokens, private keys, or DB dumps committed.
-- `JWT_SECRET` is read from the environment with a **dev placeholder default** (`cowork-dev-secret-change-me`) in `app/config.py`. This is a non-secret placeholder, not a real credential — acceptable for a public repo. The grader supplies its own `JWT_SECRET` at container runtime.
-- Passwords stored as PBKDF2-HMAC-SHA256 with per-user salt (`app/auth.py`) — no plaintext passwords.
-- No hardcoded real credentials found.
+- No `.env` in the repo. No API keys, tokens, private keys, or DB dumps committed.
+- `JWT_SECRET` is read from the environment with a **placeholder** default (`cowork-dev-secret-change-me`) in `app/config.py` — a non-secret dev default, not a real credential. The container/grader supplies the real value at runtime.
+- Passwords: PBKDF2-HMAC-SHA256 with a per-user random salt (`app/auth.py`). No plaintext.
+- Test fixtures use obvious placeholders (`pw12345`, `test-secret`). No real credentials hardcoded.
+- Secret-pattern scan over all tracked text files: only field-name references in spec/tests — **no secret values**.
 
 ## .env / .gitignore status
-- `.gitignore` present and excludes: `__pycache__/`, `*.pyc`, `*.db`, `.venv/`, `venv/`, `.pytest_cache/`.
-- **Recommendation (execution phase):** add `.env` and `*.env` to `.gitignore` defensively, and ship a `.env.example` with placeholder `JWT_SECRET=change-me` so evaluators know the required vars without exposing anything.
-- SQLite DB file (`cowork.db`) is git-ignored via `*.db` — good, prevents committing runtime data.
+- `.gitignore` excludes `__pycache__/`, `*.pyc`, `*.db`, `.venv/`, `venv/`, `.pytest_cache/`.
+- Verified ignored: `.venv/`, `cowork.db` (runtime DB never committed).
+- Optional hardening: add `.env`/`*.env` to `.gitignore` and ship a `.env.example` with `JWT_SECRET=change-me` so evaluators know the required var. Not required for safety (no `.env` exists).
 
-## Confidential-data exposure checklist
-- [x] No `.env` committed
-- [x] No API keys / tokens / private keys in source
-- [x] No database file committed (`*.db` ignored)
-- [x] No hidden evaluation materials or grader files copied in
-- [x] No hardcoded real secrets
-- [x] Problem-statement PDF (`ICT_Fest_Hackathon_Preliminary.pdf`) lives in the **parent** workspace, NOT inside the challenge repo → will not be committed/published. Keep it out of the repo.
-- [ ] Re-verify `git status` / `git diff` before public push (execution Phase 8)
+## Decision needed — committed problem statement
+- `docs/ICT_Fest_Hackathon_Preliminary.pdf` was committed (commit "Add pdf for documentation"). The submission repo must be **public**, so this PDF becomes public too.
+- If the organizers intend the problem statement to be public, keeping it is fine. If not, remove it before pushing:
+  ```bash
+  git rm docs/ICT_Fest_Hackathon_Preliminary.pdf
+  echo "*.pdf" >> .gitignore
+  git commit -m "chore: remove problem-statement PDF from public repo"
+  ```
+  (It only lives in the last commit, so no history rewrite is needed if removed before push. If it has already been pushed, rewrite history.)
 
-## Auth / data-access risks (informational — these are the graded bugs, not repo-safety issues)
-- Multi-tenancy: `/admin/export` currently leaks cross-org bookings (bug EX1) — a data-isolation defect to FIX in code (tracked in BUG_LEDGER). Not a repo-publishing risk.
-- IDOR on `GET /bookings/{id}` (bug B6) — data-isolation defect to fix.
-- Logout/refresh token invalidation broken (A2/A5) — auth defects to fix.
-- These are correctness bugs the grader tests; fixing them is the task. They do not affect whether the *repository* is safe to make public.
+## Auth / data-isolation (these were graded BUGS — now FIXED, listed for completeness)
+- Cross-org export leak (EX1) — fixed: export is org-scoped, cross-org room → 404.
+- Booking IDOR (B6) — fixed: members only read their own bookings.
+- Logout no-op (A2) / refresh reuse (A5) — fixed: `jti` blacklist + single-use rotation.
+- All multi-tenancy paths return 404 for cross-org ids.
 
-## Public-repo safety checklist (pre-submission)
-- [x] No secrets in tracked files
-- [x] `.gitignore` covers db/venv/cache
-- [ ] Add `.env` to `.gitignore` + provide `.env.example` (defensive)
-- [ ] `git log`/history contains no secret (single initial commit + doc commits — clean)
-- [ ] Confirm PDF/problem statement not added to repo
-- [ ] Final `git status` clean of stray large/local files
+## Public-repo safety checklist
+- [x] No secrets in tracked files (scanned)
+- [x] `.gitignore` covers db/venv/cache; `.venv` and `cowork.db` confirmed ignored
+- [x] No hardcoded real credentials; passwords hashed
+- [x] Git history clean of secrets (only source + docs + PDF commits)
+- [ ] **Decide on `docs/…​.pdf`** (keep vs remove) before pushing public
+- [ ] Optional: add `.env` to `.gitignore` + `.env.example`
+- [ ] Final `git status` clean of stray local/large files
