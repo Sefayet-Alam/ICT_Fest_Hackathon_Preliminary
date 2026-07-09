@@ -236,6 +236,17 @@ def test_past_start_rejected_no_grace():  # T-WIN-PAST  (bug B2)
     assert r.status_code == 400 and r.json()["code"] == "INVALID_BOOKING_WINDOW"
 
 
+def test_malformed_datetime_returns_400():  # H1 (unhandled ValueError -> 500)
+    _, tok = admin_ctx()
+    room = make_room(tok)
+    for bad in ({"room_id": room, "start_time": "not-a-date", "end_time": "2027-01-01T10:00:00"},
+                {"room_id": room, "start_time": "2027-01-01T10:00:00", "end_time": "whoops"},
+                {"room_id": room, "start_time": "", "end_time": "2027-01-01T10:00:00"}):
+        r = client.post("/bookings", json=bad, headers=auth(tok))
+        assert r.status_code == 400, f"{bad} -> {r.status_code}"
+        assert r.json()["code"] == "INVALID_BOOKING_WINDOW"
+
+
 # ---------------------------------------------------------------- Rule 3 / double-booking
 def test_overlap_conflict():  # T-CONF-OVERLAP
     _, tok = admin_ctx()

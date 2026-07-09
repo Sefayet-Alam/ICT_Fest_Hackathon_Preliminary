@@ -32,6 +32,13 @@ All line numbers are pre-fix (against the `Initial commit`).
 | RL1 | 5 | Rate limiter not thread-safe (miscount) | `app/services/ratelimit.py:18-26` (unguarded read-modify-write + sleep) | 20/60s per user holds under concurrency | Concurrent requests lose updates → limit bypassable | Fire >20 concurrent /bookings for one user | T-RATE-CONC | Guard bucket mutation with `threading.Lock` | FIXED ✓ verified |
 | B-CONC | 3,4 | Double-booking & quota not atomic under concurrency | `app/routers/bookings.py:42-71,100-103` (check-then-insert, sleeps widen race) | Conflict/quota hold under concurrent requests | Two concurrent bookings for same slot both succeed | Concurrent identical /bookings → 2×201 | T-CONF-CONC, T-QUOTA-CONC | Serialize conflict-check+insert (process lock) or DB-level guard | FIXED ✓ verified |
 
+## Second-pass (bug-hunting) findings
+
+| ID | Rule | Bug | Evidence (file:line) | Expected | Actual | Repro | Testcase | Fix plan | Status |
+|----|------|-----|----------------------|----------|--------|-------|----------|----------|--------|
+| H1 | 2 | Malformed/empty `start_time`/`end_time` crashes booking creation | `app/routers/bookings.py:73-74` → `app/timeutils.py:11` (`datetime.fromisoformat` raises `ValueError`, unhandled) | Bad datetime → 400 `INVALID_BOOKING_WINDOW` (availability/report already do this) | Unhandled `ValueError` → **HTTP 500** | `POST /bookings` with `start_time:"not-a-date"` → 500 | test_malformed_datetime_returns_400 | Catch `ValueError` in `parse_input_datetime` usage → raise `AppError(400, "INVALID_BOOKING_WINDOW", …)` | FIXED ✓ verified |
+| H2 | 15,16 | Concurrent registration of the same *new* org name → `IntegrityError` (unique `Organization.name`) → 500 | `app/routers/auth.py` register (check-then-insert, no lock/handling) | Concurrent valid requests never 500 | Two simultaneous registers of a brand-new org name → one 500 | (not automated — rare) | Catch IntegrityError / serialize org creation | SUSPECTED — low risk, left unfixed (low probability; not a listed rule violation; a 500 is not a hang) |
+
 ## Notes
 - Deliberate `time.sleep()` hooks exist in `bookings.py`, `ratelimit.py`, `reference.py`, `stats.py`, `notifications.py` — they widen concurrency race windows so the concurrency bugs are observable. The fix is correct locking/atomicity, not merely removing sleeps.
 - Fix order (low-risk, high-value first): T1 → B1 → B2 → B3 → B7 → B6 → B5a/b/c → A4 → B8a/b → B9 → A1 → A2 → A5 → EX1 → RM1 → AD1 → S1 → REF1 → RL1 → N1 → B-CONC.

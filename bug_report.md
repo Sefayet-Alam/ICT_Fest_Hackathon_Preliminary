@@ -36,6 +36,7 @@ passes after the fix. Grading is black-box; every fix preserves the API contract
 | S1 | 14 | Room stats drift from DB | Medium | test_stats_consistent_after_cancel, test_stats_consistent_under_concurrency | FIXED |
 | A4 | 15 | Duplicate username returns 200 | High | test_register_duplicate_username_409 | FIXED |
 | N1 | 16 | Notification lock-ordering deadlock | Critical | test_no_deadlock_on_concurrent_create_and_cancel | FIXED |
+| H1 | 2 | Malformed datetime → HTTP 500 | Medium | test_malformed_datetime_returns_400 | FIXED (2nd pass) |
 
 ---
 
@@ -154,3 +155,13 @@ passes after the fix. Grading is black-box; every fix preserves the API contract
 - **Wrong:** `notify_created` acquired email→audit while `notify_cancelled` acquired audit→email; a concurrent create + cancel deadlocked and hung the service.
 - **Fix:** consistent lock order (email→audit) in both.
 - **Proof:** `test_no_deadlock_on_concurrent_create_and_cancel` (completes within a 30s timeout).
+
+## H1 — Malformed datetime crashed booking creation (Rule 2) — 2nd pass
+- **Affected:** `app/routers/bookings.py` `create_booking` → `app/timeutils.py` `parse_input_datetime`
+- **Wrong:** an invalid/empty `start_time`/`end_time` made `datetime.fromisoformat` raise `ValueError`, which was unhandled → **HTTP 500**. (Availability and usage-report already mapped bad dates to `400 INVALID_BOOKING_WINDOW`; the booking path did not.)
+- **Fix:** wrap the two `parse_input_datetime` calls in `try/except ValueError` → `AppError(400, "INVALID_BOOKING_WINDOW", …)`, consistent with the other date endpoints and the error contract.
+- **Proof:** `test_malformed_datetime_returns_400` (three malformed payloads → 400).
+
+## H2 — Concurrent same-new-org registration (Rules 15/16) — NOT fixed (documented)
+- **Observed:** two simultaneous `POST /auth/register` for the *same brand-new* org name can race the unique `Organization.name` constraint → one `IntegrityError` → 500.
+- **Decision:** left as-is. Low probability, not a listed rule violation, and a 500 is not a hang (Rule 16 is about hangs). A defensive fix (catch IntegrityError / serialize org creation) was judged higher-risk than the exposure. Tracked in `BUG_LEDGER.md` as SUSPECTED.
