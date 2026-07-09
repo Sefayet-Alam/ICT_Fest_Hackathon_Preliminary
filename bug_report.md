@@ -4,7 +4,7 @@
 passes after the fix. Grading is black-box; every fix preserves the API contract
 (paths, status codes, error codes, JSON field names, JWT claims).
 
-- **Tests:** `pytest` → **61 passed** (54 spec + 6 concurrency + 1 original smoke).
+- **Tests:** `pytest` → **64 passed** (55 spec + 8 concurrency + 1 original smoke).
 - **Reproduction suites:** `tests/test_spec.py` (deterministic), `tests/test_concurrency.py` (rules 3/4/5/7/16).
 - Line numbers below are pre-fix (against `Initial commit`).
 

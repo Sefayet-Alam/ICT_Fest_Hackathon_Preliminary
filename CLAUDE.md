@@ -23,7 +23,7 @@ Dockerfile pins `python:3.11-slim`.
 python3.11 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt pytest      # pytest is not in requirements.txt
 
-pytest -q                                    # full suite (expect: 61 passed)
+pytest -q                                    # full suite (expect: 64 passed)
 pytest tests/test_spec.py -q                 # deterministic spec/reproduction cases
 pytest tests/test_concurrency.py -q          # rules 3,4,5,7,14,16 (threaded)
 pytest tests/test_spec.py::test_back_to_back_allowed -q   # a single test

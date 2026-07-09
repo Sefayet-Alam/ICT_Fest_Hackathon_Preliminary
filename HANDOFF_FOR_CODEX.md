@@ -4,7 +4,7 @@ Continue without prior chat context. Read `bug_report.md`, `BUG_LEDGER.md`,
 `TESTCASES.md`/`.json`, `HACKATHON_STATE.md`, and `README.md` (spec) first.
 
 ## Status: DONE (pending Docker build verification)
-All 24 planted bugs are fixed and verified. `pytest` → **61 passed**. Live uvicorn
+All 24 planted bugs are fixed and verified. `pytest` → **64 passed**. Live uvicorn
 smoke passes. The only open items are a Docker build check and the final
 security/submission review.
 
@@ -21,7 +21,7 @@ Source (minimal, contract-preserving diffs):
 - `app/services/ratelimit.py` — thread-safe bucket under a lock (RL1).
 - `app/services/notifications.py` — consistent lock order, no deadlock (N1).
 
-Tests added: `tests/test_spec.py` (54), `tests/test_concurrency.py` (6). Original `tests/test_smoke.py` unchanged and passing.
+Tests added: `tests/test_spec.py` (55), `tests/test_concurrency.py` (8). Original `tests/test_smoke.py` unchanged and passing.
 
 Docs: `BUG_LEDGER.md` (all FIXED ✓), `bug_report.md` (per-bug detail), `HACKATHON_STATE.md`, this file, `SECURITY_CHECK.md`.
 
@@ -35,7 +35,7 @@ Docs: `BUG_LEDGER.md` (all FIXED ✓), `bug_report.md` (per-bug detail), `HACKAT
 ```bash
 python3.11 -m venv .venv && source .venv/bin/activate   # 3.11 required (pydantic 2.7.1 has no 3.13 wheel)
 pip install -r requirements.txt pytest
-pytest -q                        # expect: 61 passed
+pytest -q                        # expect: 64 passed
 uvicorn app.main:app --port 8000 # manual/curl per TESTCASES.md
 docker compose up --build        # graded container path
 ```
